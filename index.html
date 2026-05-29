@@ -309,10 +309,33 @@
     <!-- 腳本邏輯：QR 解碼 + OCR + NLP + 分類 -->
     <script>
         const SAMPLE_INVOICE_FILE = 'mos_invoice_sample.png';
+        const INVOICE_IMAGE_CDN = 'https://cdn.jsdelivr.net/gh/mashiro94i/Machine-Learning@main/mos_invoice_sample.png';
+        const INVOICE_IMAGE_RAW = 'https://raw.githubusercontent.com/mashiro94i/Machine-Learning/main/mos_invoice_sample.png';
+
         function resolveAssetUrl(relativePath) {
             return new URL(relativePath, document.baseURI || window.location.href).href;
         }
-        const SAMPLE_INVOICE_URL = resolveAssetUrl(SAMPLE_INVOICE_FILE);
+
+        function invoiceImageCandidates() {
+            return [resolveAssetUrl(SAMPLE_INVOICE_FILE), INVOICE_IMAGE_CDN, INVOICE_IMAGE_RAW];
+        }
+
+        /** 對話泡泡與預設展示用（GitHub Pages 常無法提供同目錄 png，故以 CDN 為主） */
+        const SAMPLE_INVOICE_URL = INVOICE_IMAGE_CDN;
+
+        function setImageWithFallback(img, urls) {
+            let idx = 0;
+            img.onerror = function() {
+                idx += 1;
+                if (idx < urls.length) {
+                    img.src = urls[idx];
+                } else {
+                    img.onerror = null;
+                    img.alt = '發票示意圖載入失敗，請使用「上傳發票圖片」';
+                }
+            };
+            img.src = urls[0];
+        }
         const ETAX_BAN_QUERY_URL = 'https://www.etax.nat.gov.tw/etwmain/etw113w1/ban/query';
 
         // 您提供的真實 QR 字串（已去除 NUL）
@@ -386,11 +409,7 @@
         function initInvoicePreviewImage() {
             const img = document.getElementById('invoicePreviewImg');
             if (!img) return;
-            img.src = SAMPLE_INVOICE_URL;
-            img.onerror = function() {
-                img.onerror = null;
-                img.alt = '發票示意圖（請上傳或確認 mos_invoice_sample.png 已部署）';
-            };
+            setImageWithFallback(img, invoiceImageCandidates());
         }
 
         window.onload = function() {
@@ -654,7 +673,7 @@
             };
         }
 
-        const PAYER_SELF_LABEL = '我';
+        const PAYER_SELF_LABEL = '\u6211';
 
         function formatPayerDisplay(payer, isDefault) {
             return isDefault ? `${payer} (預設)` : payer;
@@ -710,7 +729,19 @@
             isSimulating = false;
         }
 
+        function commitCarrierApiLedger(draft) {
+            commitLedgerEntry({
+                ...draft,
+                payer: PAYER_SELF_LABEL,
+                payerIsDefault: false
+            });
+        }
+
         function beginLedgerWithPayerCheck(draft) {
+            if (draft.meta && draft.meta.source === 'carrier') {
+                commitCarrierApiLedger(draft);
+                return;
+            }
             if (draft.payer) {
                 commitLedgerEntry({ ...draft, payerIsDefault: false });
                 return;
@@ -815,7 +846,7 @@
                 item: items || '—',
                 amount: parseInt(api.amount, 10) || 0,
                 payer: PAYER_SELF_LABEL,
-                meta: { source: 'carrier', matched, invNum: api.invNum, invDate: api.invDate, invoiceTime: api.invoiceTime }
+                meta: { source: 'carrier', autoPayer: true, matched, invNum: api.invNum, invDate: api.invDate, invoiceTime: api.invoiceTime }
             };
         }
 
@@ -1176,7 +1207,7 @@
                         <p class="text-[10px] text-slate-400">載具為本人帳號，付款人自動判別為 <b>${PAYER_SELF_LABEL}</b>（對應 ${DEFAULT_PAYER}）。</p>
                     </div>`);
 
-                beginLedgerWithPayerCheck(draft);
+                commitCarrierApiLedger(draft);
             }, 900);
         }
 
