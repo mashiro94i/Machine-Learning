@@ -39,6 +39,42 @@
         .scanner-line {
             animation: scan-animation 2s linear infinite;
         }
+        .line-phone-frame {
+            box-shadow:
+                0 28px 60px -12px rgba(15, 23, 42, 0.55),
+                0 12px 24px -8px rgba(0, 0, 0, 0.35),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+        .line-chat-bg {
+            background:
+                radial-gradient(ellipse 80% 50% at 50% 0%, rgba(6, 199, 85, 0.08) 0%, transparent 55%),
+                linear-gradient(180deg, #1e293b 0%, #0f172a 45%, #020617 100%);
+        }
+        .line-header-bar {
+            background: linear-gradient(135deg, #06c755 0%, #049948 50%, #037a3a 100%);
+            box-shadow: 0 2px 8px rgba(4, 153, 72, 0.45);
+        }
+        .msg-bot-bubble {
+            background: linear-gradient(160deg, #334155 0%, #1e293b 100%);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        }
+        .msg-user-bubble {
+            background: linear-gradient(160deg, #34d399 0%, #059669 100%);
+            box-shadow: 0 4px 16px rgba(5, 150, 105, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        }
+        .line-scenario-btn {
+            background: linear-gradient(180deg, #475569 0%, #334155 100%);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+        .line-scenario-btn:hover {
+            background: linear-gradient(180deg, #64748b 0%, #475569 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+        .line-input-bar {
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.35);
+        }
     </style>
 </head>
 <body class="bg-slate-100 font-sans min-h-screen text-slate-800">
@@ -130,56 +166,48 @@
                 </div>
             </section>
 
-            <!-- 下方：LINE -->
-            <section class="flex flex-col">
-                <div class="flex items-center gap-2 mb-3 px-1">
-                    <div class="w-8 h-8 rounded-lg bg-[#06C755] flex items-center justify-center text-white font-bold text-sm shadow">LINE</div>
-                    <h2 class="text-lg font-bold text-slate-800">LINE</h2>
-                    <span class="text-xs text-slate-500">雲端旅遊記帳 LineBot 對話模擬</span>
-                </div>
-
-            <div class="flex flex-col flex-1 bg-slate-900 rounded-2xl shadow-xl overflow-hidden border border-slate-700 min-h-[560px] w-full max-w-3xl">
+            <!-- 下方：LINE（置中） -->
+            <section class="flex flex-col items-center w-full">
+            <div class="line-phone-frame flex flex-col flex-1 w-full max-w-md mx-auto rounded-3xl overflow-hidden border border-slate-600/80 min-h-[560px]">
                 <!-- LineBot 頂部通訊欄 -->
-                <div class="bg-slate-800 p-4 border-b border-slate-700 flex items-center justify-between font-medium">
+                <div class="line-header-bar p-4 flex items-center justify-between font-medium text-white">
                     <div class="flex items-center gap-3">
                         <div class="relative">
-                            <div class="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white font-bold text-lg shadow-inner">
+                            <div class="w-10 h-10 rounded-full bg-white/95 flex items-center justify-center text-[#06c755] font-bold text-lg shadow-md ring-2 ring-white/40">
                                 旅
                             </div>
-                            <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-slate-800 rounded-full"></div>
+                            <div class="absolute bottom-0 right-0 w-3 h-3 bg-lime-300 border-2 border-[#049948] rounded-full"></div>
                         </div>
                         <div>
-                            <select id="botSelector" onchange="switchBot()" class="bg-transparent text-white font-bold text-sm focus:outline-none cursor-pointer pr-4 hover:text-emerald-400 transition">
+                            <select id="botSelector" onchange="switchBot()" class="bg-transparent text-white font-bold text-sm focus:outline-none cursor-pointer pr-4 hover:text-white/90 transition drop-shadow-sm">
                                 <option value="smart" class="bg-slate-800 text-white">學習用LineBot (LLM 大腦版)</option>
                                 <option value="traditional" class="bg-slate-800 text-white">雲端旅遊記帳Linebot (手動引導)</option>
                             </select>
-                            <p class="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5" id="botStatus">
-                                <i class="fa-solid fa-brain text-emerald-400"></i> AI 語意推理中
+                            <p class="text-[11px] text-white/85 flex items-center gap-1 mt-0.5" id="botStatus">
+                                <i class="fa-solid fa-brain"></i> AI 語意推理中
                             </p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-4 text-slate-400">
-                        <button class="hover:text-white transition"><i class="fa-solid fa-magnifying-glass"></i></button>
-                        <button class="hover:text-white transition"><i class="fa-solid fa-bars"></i></button>
+                    <div class="flex items-center gap-4 text-white/80">
+                        <button type="button" class="hover:text-white transition"><i class="fa-solid fa-magnifying-glass"></i></button>
+                        <button type="button" class="hover:text-white transition"><i class="fa-solid fa-bars"></i></button>
                     </div>
                 </div>
 
-                <!-- 聊天紀錄區 -->
-                <div id="chatContainer" class="flex-1 p-4 overflow-y-auto space-y-4 bg-slate-950 flex flex-col justify-end min-h-[350px]">
-                    <div class="text-center text-xs text-slate-500 my-2">2026年5月28日 上午10:55</div>
+                <!-- 聊天紀錄區（置中） -->
+                <div id="chatContainer" class="line-chat-bg flex-1 px-4 py-4 overflow-y-auto space-y-5 flex flex-col justify-end min-h-[350px] items-center">
+                    <div class="text-center text-[10px] text-slate-400/90 bg-slate-800/60 px-3 py-1 rounded-full shadow-sm">2026年5月28日 上午10:55</div>
                     
-                    <div class="flex items-start gap-2.5">
-                        <div class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                    <div class="w-full flex flex-col items-center gap-1.5 chat-msg-bot">
+                        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-xs font-bold shadow-lg ring-2 ring-emerald-500/30">
                             旅
                         </div>
-                        <div class="flex flex-col gap-1 max-w-[80%]">
-                            <span class="text-[10px] text-slate-400" id="chatBotName">學習用LineBot</span>
-                            <div class="bg-slate-800 text-slate-100 p-3 rounded-2xl rounded-tl-none text-xs md:text-sm shadow">
-                                歡迎來到旅遊記帳助手！👋<br>
-                                請選擇發票掃描、載具同步或輸入對話開始記帳。若未標註付款人，我會再詢問您是誰購買的。
-                            </div>
-                            <span class="text-[9px] text-slate-500 self-start">10:55</span>
+                        <span class="text-[10px] text-slate-400" id="chatBotName">學習用LineBot</span>
+                        <div class="msg-bot-bubble text-slate-100 p-3.5 rounded-2xl text-xs md:text-sm max-w-[92%] text-center leading-relaxed border border-slate-600/50">
+                            歡迎來到旅遊記帳助手！👋<br>
+                            請選擇發票掃描、載具同步或輸入對話開始記帳。若未標註付款人，我會再詢問您是誰購買的。
                         </div>
+                        <span class="text-[9px] text-slate-500">10:55</span>
                     </div>
                 </div>
 
@@ -190,29 +218,29 @@
                 </div>
 
                 <!-- 快捷操作面板 -->
-                <div class="bg-slate-800 p-3 border-t border-slate-700">
-                    <p class="text-xs text-slate-400 mb-2 font-semibold px-1 flex items-center gap-1">
-                        <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> 請選擇以下場景模擬 Line 訊息輸入：
+                <div class="bg-slate-800/95 p-3 border-t border-slate-600/60 backdrop-blur-sm shadow-[0_-4px_12px_rgba(0,0,0,0.2)]">
+                    <p class="text-xs text-slate-300 mb-2 font-semibold px-1 flex items-center justify-center gap-1 text-center">
+                        <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> 請選擇以下場景模擬 Line 訊息輸入
                     </p>
                     
                     <!-- 智慧版情境按鈕 -->
                     <div id="smartBotScenarios" class="grid grid-cols-2 gap-2 text-xs">
-                        <button onclick="processPresetInvoiceQR()" class="bg-slate-700 hover:bg-slate-600 text-slate-100 p-2 rounded-lg text-left transition border border-emerald-500/50 flex flex-col justify-between col-span-2">
+                        <button onclick="processPresetInvoiceQR()" class="line-scenario-btn text-slate-100 p-2.5 rounded-xl text-center transition border border-emerald-400/40 flex flex-col justify-between col-span-2">
                             <span class="font-bold text-emerald-400 flex items-center justify-between w-full">
                                 <span><i class="fa-solid fa-barcode"></i> 重新掃描內建摩斯發票 QR</span>
                                 <span class="bg-emerald-900 text-emerald-200 px-1.5 py-0.5 rounded text-[9px]">WW18355421</span>
                             </span>
                             <span class="text-[10px] text-slate-400 mt-1">內建 QR 解析，不顯示 raw 條碼對話。</span>
                         </button>
-                        <button onclick="simulateDialogueUpload()" class="bg-slate-700 hover:bg-slate-600 text-slate-100 p-2 rounded-lg text-left transition border border-slate-600 flex flex-col justify-between">
+                        <button onclick="simulateDialogueUpload()" class="line-scenario-btn text-slate-100 p-2.5 rounded-xl text-center transition border border-slate-500/50 flex flex-col justify-between">
                             <span class="font-bold text-sky-400"><i class="fa-regular fa-comment-dots"></i> 對話紀錄 NLP</span>
                             <span class="text-[10px] text-slate-400 mt-1">「九份跟阿伯買草仔粿...」</span>
                         </button>
-                        <button onclick="simulateCarrierAPI()" class="bg-slate-700 hover:bg-slate-600 text-slate-100 p-2 rounded-lg text-left transition border border-violet-500/50 flex flex-col justify-between">
+                        <button onclick="simulateCarrierAPI()" class="line-scenario-btn text-slate-100 p-2.5 rounded-xl text-center transition border border-violet-400/40 flex flex-col justify-between">
                             <span class="font-bold text-violet-400"><i class="fa-solid fa-mobile-screen"></i> 載具 API 自動記帳</span>
                             <span class="text-[10px] text-slate-400 mt-1">模擬財政部雲端發票 API 回傳</span>
                         </button>
-                        <button onclick="simulateComplexContext()" class="bg-slate-700 hover:bg-slate-600 text-slate-100 p-2 rounded-lg text-left transition border border-slate-600 flex flex-col justify-between col-span-2">
+                        <button onclick="simulateComplexContext()" class="line-scenario-btn text-slate-100 p-2.5 rounded-xl text-center transition border border-slate-500/50 flex flex-col justify-between col-span-2">
                             <span class="font-bold text-amber-400"><i class="fa-solid fa-arrows-spin"></i> 複雜轉折與退費</span>
                             <span class="text-[10px] text-slate-400 mt-1">「浮潛取消、退費 2000元」</span>
                         </button>
@@ -232,10 +260,10 @@
                 </div>
 
                 <!-- 手動輸入區 -->
-                <div class="bg-slate-850 p-3 border-t border-slate-700 flex items-center gap-2">
-                    <button type="button" onclick="processPresetInvoiceQR()" class="text-slate-400 hover:text-white transition p-1" title="掃描發票"><i class="fa-regular fa-image text-lg"></i></button>
-                    <input type="text" id="userInput" placeholder="輸入對話，例如：在九份跟老街阿伯買了草仔粿3個共150元" class="flex-1 bg-slate-900 border border-slate-700 rounded-full px-4 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500">
-                    <button type="button" onclick="sendUserText()" class="text-emerald-500 hover:text-emerald-400 transition p-1"><i class="fa-solid fa-paper-plane text-lg"></i></button>
+                <div class="line-input-bar p-3 border-t border-slate-600/50 flex items-center gap-2">
+                    <button type="button" onclick="processPresetInvoiceQR()" class="text-slate-400 hover:text-emerald-400 transition p-1.5 rounded-full hover:bg-slate-700/50" title="掃描發票"><i class="fa-regular fa-image text-lg"></i></button>
+                    <input type="text" id="userInput" placeholder="輸入對話，例如：在九份跟老街阿伯買了草仔粿3個共150元" class="flex-1 bg-slate-900/90 border border-slate-600 rounded-full px-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 shadow-inner">
+                    <button type="button" onclick="sendUserText()" class="w-9 h-9 flex items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-lg hover:brightness-110 transition"><i class="fa-solid fa-paper-plane text-sm"></i></button>
                 </div>
             </div>
             </section>
@@ -821,14 +849,14 @@
             chatContainer.innerHTML = `<div class="text-center text-xs text-slate-500 my-2">2026年5月28日 上午10:55</div>`;
 
             if (currentBot === 'smart') {
-                botStatus.innerHTML = `<i class="fa-solid fa-brain text-emerald-400"></i> AI 語意推理中`;
+                botStatus.innerHTML = `<i class="fa-solid fa-brain"></i> AI 語意推理中`;
                 chatBotName.innerText = "學習用LineBot";
                 smartScenarios.classList.remove('hidden');
                 tradScenarios.classList.add('hidden');
                 
                 appendBotMessage("歡迎來到旅遊記帳助手！👋<br>請選擇發票掃描、載具同步或輸入對話開始記帳。若未標註付款人，我會再詢問您是誰購買的。");
             } else {
-                botStatus.innerHTML = `<i class="fa-solid fa-list-check text-amber-400"></i> 手動關聯流程`;
+                botStatus.innerHTML = `<i class="fa-solid fa-list-check"></i> 手動關聯流程`;
                 chatBotName.innerText = "雲端旅遊記帳Linebot";
                 smartScenarios.classList.add('hidden');
                 tradScenarios.classList.remove('hidden');
@@ -840,25 +868,23 @@
         // 發送訊息輔助
         function appendUserMessage(text, imageSrc = null) {
             const chatContainer = document.getElementById('chatContainer');
-            let contentHTML = `<div class="bg-emerald-600 text-white p-3 rounded-2xl rounded-tr-none text-xs md:text-sm shadow">${text}</div>`;
+            let contentHTML = `<div class="msg-user-bubble text-white p-3.5 rounded-2xl text-xs md:text-sm max-w-[92%] text-center leading-relaxed">${text}</div>`;
             
             if (imageSrc) {
                 contentHTML = `
-                    <div class="bg-emerald-600 text-white p-2 rounded-2xl rounded-tr-none text-xs md:text-sm shadow space-y-2 max-w-[220px]">
-                        <img src="${imageSrc}" alt="上傳發票" class="rounded border border-emerald-400/50 w-full object-cover max-h-40 bg-white">
+                    <div class="msg-user-bubble text-white p-2.5 rounded-2xl text-xs md:text-sm space-y-2 max-w-[92%] text-center">
+                        <img src="${imageSrc}" alt="上傳發票" class="rounded-lg border border-white/30 w-full object-cover max-h-40 bg-white mx-auto">
                         <p class="text-[10px]">${text}</p>
                     </div>
                 `;
             }
 
             const userMsg = document.createElement('div');
-            userMsg.className = "flex items-start gap-2.5 justify-end";
+            userMsg.className = "w-full flex flex-col items-center gap-1 chat-msg-user";
             userMsg.innerHTML = `
-                <div class="flex flex-col gap-1 max-w-[80%] items-end">
-                    <span class="text-[10px] text-slate-400">阿茫</span>
-                    ${contentHTML}
-                    <span class="text-[9px] text-slate-500">17:15</span>
-                </div>
+                <span class="text-[10px] text-slate-400">阿茫</span>
+                ${contentHTML}
+                <span class="text-[9px] text-slate-500">17:15</span>
             `;
             chatContainer.appendChild(userMsg);
             chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -866,19 +892,18 @@
 
         function appendBotMessage(text) {
             const chatContainer = document.getElementById('chatContainer');
+            const botName = currentBot === 'smart' ? '學習用LineBot' : '雲端旅遊記帳Linebot';
             const botMsg = document.createElement('div');
-            botMsg.className = "flex items-start gap-2.5";
+            botMsg.className = "w-full flex flex-col items-center gap-1.5 chat-msg-bot";
             botMsg.innerHTML = `
-                <div class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-xs font-bold shadow-lg ring-2 ring-emerald-500/30">
                     旅
                 </div>
-                <div class="flex flex-col gap-1 max-w-[80%]">
-                    <span class="text-[10px] text-slate-400">${currentBot === 'smart' ? '學習用LineBot' : '雲端旅遊記帳Linebot'}</span>
-                    <div class="bg-slate-800 text-slate-100 p-3 rounded-2xl rounded-tl-none text-xs md:text-sm shadow border border-slate-700">
-                        ${text}
-                    </div>
-                    <span class="text-[9px] text-slate-500 self-start">17:16</span>
+                <span class="text-[10px] text-slate-400">${botName}</span>
+                <div class="msg-bot-bubble text-slate-100 p-3.5 rounded-2xl text-xs md:text-sm max-w-[92%] text-center leading-relaxed border border-slate-600/50">
+                    ${text}
                 </div>
+                <span class="text-[9px] text-slate-500">17:16</span>
             `;
             chatContainer.appendChild(botMsg);
             chatContainer.scrollTop = chatContainer.scrollHeight;
