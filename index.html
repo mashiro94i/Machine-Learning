@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LineBot 雲端旅遊記帳系統模擬器 - 發票解碼升級版</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.3);
+        }
+        @keyframes pulse-highlight {
+            0%, 100% { background-color: rgba(16, 185, 129, 0); }
+            50% { background-color: rgba(16, 185, 129, 0.15); }
+        }
+        .row-highlight {
+            animation: pulse-highlight 2s ease-in-out;
+        }
+        @keyframes scan-animation {
+            0% { top: 0%; }
+            50% { top: 100%; }
+            100% { top: 0%; }
+        }
+        .scanner-line {
+            animation: scan-animation 2s linear infinite;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans min-h-screen text-slate-800">
+
+    <div class="max-w-[1700px] mx-auto min-h-screen flex flex-col">
+        <!-- 頂部導航列 -->
+        <header class="bg-gradient-to-r from-emerald-600 to-teal-700 text-white px-6 py-4 shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-cloud-sun"></i> 雲端旅遊記帳專案系統模擬器
+                </h1>
+                <p class="text-sm text-teal-100 mt-1">
+                    機器學習升級：<strong>LLM 常識推理</strong> 結合 <strong>財政部電子發票 QR Code 解碼演算法</strong>
+                </p>
+            </div>
+            <div class="flex flex-wrap gap-2 items-center bg-teal-800/40 p-2 rounded-lg text-xs md:text-sm border border-teal-500/20">
+                <span class="flex items-center gap-1">
+                    <span class="w-2.5 h-2.5 rounded-full bg-green-400 inline-block animate-pulse"></span> 
+                    真實摩斯發票數據已載入
+                </span>
+                <span class="text-teal-300">|</span>
+                <span>資料：<strong>內建真實 QR + 稅籍查詢</strong></span>
+            </div>
+        </header>
+
+        <!-- 主體工作區：左邊 Line, 右邊 Notion & 條碼解析 -->
+        <main class="flex-1 grid grid-cols-1 xl:grid-cols-12 gap-6 p-4 md:p-6 overflow-hidden">
+            
+            <!-- 左側：LineBot 視窗區域 (佔 4 欄) -->
+            <section class="xl:col-span-4 flex flex-col bg-slate-900 rounded-2xl shadow-xl overflow-hidden border border-slate-700 min-h-[700px]">
+                <!-- LineBot 頂部通訊欄 -->
+                <div class="bg-slate-800 p-4 border-b border-slate-700 flex items-center justify-between font-medium">
+                    <div class="flex items-center gap-3">
+                        <div class="relative">
+                            <div class="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white font-bold text-lg shadow-inner">
+                                旅
+                            </div>
+                            <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-slate-800 rounded-full"></div>
+                        </div>
+                        <div>
+                            <select id="botSelector" onchange="switchBot()" class="bg-transparent text-white font-bold text-sm focus:outline-none cursor-pointer pr-4 hover:text-emerald-400 transition">
+                                <option value="smart" class="bg-slate-800 text-white">學習用LineBot (LLM 大腦版)</option>
+                                <option value="traditional" class="bg-slate-800 text-white">雲端旅遊記帳Linebot (手動引導)</option>
+                            </select>
+                            <p class="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5" id="botStatus">
+                                <i class="fa-solid fa-brain text-emerald-400"></i> AI 語意推理中
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 text-slate-400">
+                        <button class="hover:text-white transition"><i class="fa-solid fa-magnifying-glass"></i></button>
+                        <button class="hover:text-white transition"><i class="fa-solid fa-bars"></i></button>
+                    </div>
+                </div>
+
+                <!-- 聊天紀錄區 -->
+                <div id="chatContainer" class="flex-1 p-4 overflow-y-auto space-y-4 bg-slate-950 flex flex-col justify-end min-h-[350px]">
+                    <div class="text-center text-xs text-slate-500 my-2">2026年5月28日 上午10:55</div>
+                    
+                    <div class="flex items-start gap-2.5">
+                        <div class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                            旅
+                        </div>
+                        <div class="flex flex-col gap-1 max-w-[80%]">
+                            <span class="text-[10px] text-slate-400" id="chatBotName">學習用LineBot</span>
+                            <div class="bg-slate-800 text-slate-100 p-3 rounded-2xl rounded-tl-none text-xs md:text-sm shadow">
+                                歡迎來到旅遊記帳助手！👋<br>
+                                支援<strong>發票 QR</strong>、<strong>對話記帳</strong>、<strong>載具 API 查詢發票明細</strong>。請用下方按鈕或輸入框開始記帳。
+                            </div>
+                            <span class="text-[9px] text-slate-500 self-start">10:55</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 載入中動畫提示 -->
+                <div id="loadingIndicator" class="hidden px-4 py-3 bg-slate-900/90 border-t border-slate-800 flex items-center gap-2 text-xs text-emerald-400">
+                    <i class="fa-solid fa-spinner animate-spin text-sm"></i>
+                    <span id="loadingText">LLM 大腦推理中...正在辨識複雜關聯...</span>
+                </div>
+
+                <!-- 快捷操作面板 -->
+                <div class="bg-slate-800 p-3 border-t border-slate-700">
+                    <p class="text-xs text-slate-400 mb-2 font-semibold px-1 flex items-center gap-1">
+                        <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> 請選擇以下場景模擬 Line 訊息輸入：
+                    </p>
+                    
+                    <!-- 智慧版情境按鈕 -->
+                    <div id="smartBotScenarios" class="grid grid-cols-2 gap-2 text-xs">
+                        <button onclick="processPresetInvoiceQR()" class="bg-slate-700 hover:bg-slate-600 text-slate-100 p-2 rounded-lg text-left transition border border-emerald-500/50 flex flex-col justify-between col-span-2">
+                            <span class="font-bold text-emerald-400 flex items-center justify-between w-full">
+                                <span><i class="fa-solid fa-barcode"></i> 重新掃描內建摩斯發票 QR</span>
+                                <span class="bg-emerald-900 text-emerald-200 px-1.5 py-0.5 rounded text-[9px]">WW18355421</span>
+                            </span>
+                            <span class="text-[10px] text-slate-400 mt-1">內建 QR 解析，不顯示 raw 條碼對話。</span>
+                        </button>
+                        <button onclick="simulateDialogueUpload()" class="bg-slate-700 hover:bg-slate-600 text-slate-100 p-2 rounded-lg text-left transition border border-slate-600 flex flex-col justify-between">
+                            <span class="font-bold text-sky-400"><i class="fa-regular fa-comment-dots"></i> 對話紀錄 NLP</span>
+                            <span class="text-[10px] text-slate-400 mt-1">「九份跟阿伯買草仔粿...」</span>
+                        </button>
+                        <button onclick="simulateCarrierAPI()" class="bg-slate-700 hover:bg-slate-600 text-slate-100 p-2 rounded-lg text-left transition border border-violet-500/50 flex flex-col justify-between">
+                            <span class="font-bold text-violet-400"><i class="fa-solid fa-mobile-screen"></i> 載具 API 自動記帳</span>
+                            <span class="text-[10px] text-slate-400 mt-1">模擬財政部雲端發票 API 回傳</span>
+                        </button>
+                        <button onclick="simulateComplexContext()" class="bg-slate-700 hover:bg-slate-600 text-slate-100 p-2 rounded-lg text-left transition border border-slate-600 flex flex-col justify-between col-span-2">
+                            <span class="font-bold text-amber-400"><i class="fa-solid fa-arrows-spin"></i> 複雜轉折與退費</span>
+                            <span class="text-[10px] text-slate-400 mt-1">「浮潛取消、退費 2000元」</span>
+                        </button>
+                    </div>
+
+                    <!-- 傳統引導Bot的情境按鈕 -->
+                    <div id="traditionalBotScenarios" class="hidden space-y-2">
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <button onclick="traditionalStep1()" class="bg-slate-700 hover:bg-slate-600 text-slate-100 p-2.5 rounded-lg text-center transition border border-slate-600 font-bold">
+                                點擊發送：我要記帳
+                            </button>
+                            <button id="tradStep2Btn" onclick="traditionalStep2()" disabled class="bg-slate-700/50 text-slate-500 p-2.5 rounded-lg text-center cursor-not-allowed border border-slate-800 font-bold">
+                                步驟 2：手動選地點
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 手動輸入區 -->
+                <div class="bg-slate-850 p-3 border-t border-slate-700 flex items-center gap-2">
+                    <button type="button" onclick="processPresetInvoiceQR()" class="text-slate-400 hover:text-white transition p-1" title="掃描發票"><i class="fa-regular fa-image text-lg"></i></button>
+                    <input type="text" id="userInput" placeholder="輸入對話，例如：在九份跟老街阿伯買了草仔粿3個共150元" class="flex-1 bg-slate-900 border border-slate-700 rounded-full px-4 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+                    <button type="button" onclick="sendUserText()" class="text-emerald-500 hover:text-emerald-400 transition p-1"><i class="fa-solid fa-paper-plane text-lg"></i></button>
+                </div>
+            </section>
+
+            <!-- 右側：Notion 記帳板 與 發票解析說明 (佔 8 欄，左右拆分) -->
+            <section class="xl:col-span-8 flex flex-col gap-6">
+                
+                <!-- Notion 雲端旅遊記帳板 -->
+                <div class="flex flex-col bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+                    <div class="p-5 border-b border-slate-200 bg-slate-50">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2 text-xs text-slate-500">
+                                <i class="fa-solid fa-folder-open"></i> <span>我的工作區</span> / <span>旅遊規劃</span>
+                            </div>
+                            <div class="flex items-center gap-1.5 bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-semibold">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                Notion API 雙向連線中
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-3xl">✈️</span>
+                            <div>
+                                <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                                    2026 日本關東、富士山探索之旅
+                                </h2>
+                                <p class="text-xs text-slate-500 mt-0.5">
+                                    行程建立者：<strong>Jerry</strong> | 記帳模式：<strong>自動化智慧型分類</strong>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- 頂部快照看板 -->
+                        <div class="grid grid-cols-3 gap-4 mt-4">
+                            <div class="bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+                                <p class="text-[10px] font-bold text-amber-700 uppercase tracking-wider">總預算</p>
+                                <p class="text-lg font-extrabold text-slate-800">$50,000 <span class="text-[10px] font-normal text-slate-500">TWD</span></p>
+                            </div>
+                            <div class="bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
+                                <p class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">已支出總計</p>
+                                <p class="text-lg font-extrabold text-slate-800" id="totalSpentText">$5,450 <span class="text-[10px] font-normal text-slate-500">TWD</span></p>
+                            </div>
+                            <div class="bg-sky-50 p-2.5 rounded-xl border border-sky-200">
+                                <p class="text-[10px] font-bold text-sky-700 uppercase tracking-wider">活動分群</p>
+                                <p class="text-lg font-extrabold text-slate-800">5 個活動分組</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notion 數據表格 -->
+                    <div class="overflow-x-auto p-5">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-table-list text-slate-400"></i> 行程消費總覽 (Notion Database View)
+                            </h3>
+                            <button onclick="resetNotionData()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-2.5 py-1 rounded border border-slate-200 transition">
+                                <i class="fa-solid fa-rotate-left"></i> 重置數據
+                            </button>
+                        </div>
+
+                        <table class="min-w-full text-xs text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-200 text-slate-500 bg-slate-50">
+                                    <th class="py-2.5 px-3 font-semibold">活動名稱</th>
+                                    <th class="py-2.5 px-3 font-semibold">記帳地點</th>
+                                    <th class="py-2.5 px-3 font-semibold">物品細項</th>
+                                    <th class="py-2.5 px-3 font-semibold">付款者</th>
+                                    <th class="py-2.5 px-3 font-semibold text-right">金額 (TWD)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="notionTableBody" class="divide-y divide-slate-100">
+                                <!-- 預設資料 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 財政部規格解碼說明面板與模擬發票視覺 (核心加分項) -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    
+                    <!-- 真實發票照片 + 掃描預覽 -->
+                    <div class="lg:col-span-5 bg-white p-5 rounded-2xl shadow-xl border border-slate-200 flex flex-col relative overflow-hidden">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">真實影像 · ZXing + Tesseract</span>
+                            <span id="qrScanBadge" class="text-[9px] px-2 py-0.5 rounded bg-slate-100 text-slate-500">尚未掃描</span>
+                        </div>
+                        <div id="scanLine" class="hidden absolute left-4 right-4 h-1 bg-emerald-500 opacity-75 shadow-md scanner-line z-10"></div>
+                        <div class="relative flex justify-center">
+                            <img id="invoicePreviewImg" src="mos_invoice_sample.png" alt="摩斯漢堡電子發票" class="max-h-[320px] rounded-lg border border-slate-200 shadow-sm object-contain">
+                            <canvas id="invoiceScanCanvas" class="hidden"></canvas>
+                        </div>
+                        <p class="text-[9px] text-slate-400 mt-2 text-center">左碼含品項「培根雞蛋堡」· 右碼 ** · 賣方 75982588</p>
+                    </div>
+
+                    <!-- 財政部規格解碼演算法說明面板 (佔 7 欄) -->
+                    <div class="lg:col-span-7 bg-white p-5 rounded-2xl shadow-xl border border-slate-200 flex flex-col justify-between">
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-800 flex items-center gap-1.5 mb-2">
+                                <i class="fa-solid fa-code text-emerald-600"></i> 財政部電子發票 QR Code 解碼規格書對照
+                            </h4>
+                            <p class="text-xs text-slate-500 leading-relaxed mb-4">
+                                本專案核心演算法依據<strong>「政府電子發票二維條碼規格」</strong>，在偵測到左、右發票條碼時，將會按位元、位移切割字串：
+                            </p>
+
+                            <!-- 即時解碼結果面板 -->
+                            <div id="decodePanel" class="space-y-2 text-xs">
+                                <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                                    <div class="font-bold text-emerald-700 mb-1">左側 QR (77碼核心)</div>
+                                    <p id="decodeLeftRaw" class="font-mono text-[10px] text-slate-500 break-all">—</p>
+                                    <div id="decodeLeftFields" class="grid grid-cols-2 gap-1 mt-1 text-[10px] text-slate-600"></div>
+                                </div>
+                                <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                                    <div class="font-bold text-sky-700 mb-1">右側 QR (品項 ** 開頭)</div>
+                                    <p id="decodeRightRaw" class="font-mono text-[10px] text-slate-500 break-all">—</p>
+                                    <div id="decodeRightItems" class="mt-1 text-[10px] text-slate-600"></div>
+                                </div>
+                                <div class="bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+                                    <div class="font-bold text-amber-800 mb-1">OCR 備援 / 證明聯文字</div>
+                                    <p id="decodeOcrText" class="text-[10px] text-slate-600 whitespace-pre-wrap max-h-24 overflow-y-auto">—</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 簡報時的 LLM 常識結合亮點 -->
+                        <div class="mt-4 bg-emerald-50 p-3 rounded-lg border border-emerald-100 text-xs text-emerald-800 leading-relaxed">
+                            <span class="font-bold flex items-center gap-1 mb-1">
+                                <i class="fa-solid fa-lightbulb"></i> 報告亮點：LLM 如何結合 QR 數據做活動判定？
+                            </span>
+                            左碼延伸段已含 <strong>培根雞蛋堡:1:45</strong>；右碼僅 <code>**</code>。賣方統編 <code>75982588</code> 經<a href="https://www.etax.nat.gov.tw/etwmain/etw113w1/ban/query" target="_blank" class="underline">稅籍查詢</a>對應「安心食品・和平建國門市」→ 連鎖速食店 → MOS BURGER。
+                        </div>
+                    </div>
+
+                </div>
+
+            </section>
+        </main>
+
+        <footer class="bg-slate-850 border-t border-slate-700 py-4 px-6 text-center text-xs text-slate-400">
+            雲端旅遊記帳LineBot 機器學習功能與二維條碼解碼演示系統 &copy; 2026. Made for Slide Presentation.
+        </footer>
+    </div>
+
+    <!-- 腳本邏輯：QR 解碼 + OCR + NLP + 分類 -->
+    <script>
+        const SAMPLE_INVOICE_URL = 'mos_invoice_sample.png';
+        const ETAX_BAN_QUERY_URL = 'https://www.etax.nat.gov.tw/etwmain/etw113w1/ban/query';
+
+        // 您提供的真實 QR 字串（已去除 NUL）
+        const PRESET_QR_LEFT = 'WW18355421115022467110000002b0000002d0000000075982588cQrygnHz2d+2PTcgSzqLbA==:**********:1:1:1:培根雞蛋堡              0000000009:1:45';
+        const PRESET_QR_RIGHT = '**';
+
+        // 模擬「依營業人統一編號查詢」公示結果（75982588）
+        const MERCHANT_DB = {
+            '75982588': {
+                ban: '75982588',
+                status: '營業中',
+                owner: '高順興',
+                registeredName: '安心食品服務股份有限公司和平建國門市部',
+                brand: '安心食品服務股份有限公司',
+                publicBrand: '摩斯漢堡 MOS BURGER',
+                address: '臺北市大安區龍生里和平東路２段４９―１號１樓',
+                businessItem: '連鎖速食店(561114)',
+                businessCategory: '連鎖速食店',
+                established: '1080430',
+                invoiceHeader: 'MOS BURGER'
+            },
+            '23928945': {
+                ban: '23928945',
+                status: '營業中',
+                registeredName: '安心食品服務股份有限公司',
+                brand: '安心食品服務股份有限公司',
+                publicBrand: '摩斯漢堡 MOS BURGER',
+                businessCategory: '連鎖速食店',
+                businessItem: '連鎖速食店(561114)'
+            }
+        };
+        const SAMPLE_OCR_FALLBACK = {
+            invoiceNo: 'WW18355421', dateGregorian: '2026-02-24', dateRoc: '1150224',
+            randomCode: '6711', total: 45, sellerBan: '75982588', storeNo: '339', hour: 17
+        };
+        const DEFAULT_PAYER = '阿芒';
+        const KNOWN_PAYERS = ['阿芒', '小美', '百香果', '思樂冰', 'Jerry'];
+        const TRIP_ACTIVITIES = [
+            { name: '東京市區逛街', color: 'purple', keywords: ['大安', '台北', '澀谷', '新宿', '和平東路', '信義'] },
+            { name: '九份一日遊', color: 'amber', keywords: ['九份', '瑞芳'] },
+            { name: '環球影城', color: 'blue', keywords: ['大阪', '環球', 'USJ'] },
+            { name: '夜宿溫泉旅館', color: 'amber', keywords: ['箱根', '溫泉', '旅館'] }
+        ];
+
+        let currentBot = 'smart';
+        let isSimulating = false;
+        let lastDecodeResult = null;
+        let pendingLedger = null;
+        let preprocessFrames = [];
+        let preprocessSummary = null;
+
+        const PREPROCESS_METHODS = [
+            { id: 'raw', name: '原圖', mode: 'raw', crop: 'full' },
+            { id: 'gray', name: '灰階', mode: 'gray', crop: 'full' },
+            { id: 'contrast', name: '灰階 + 強對比', mode: 'contrast', crop: 'full' },
+            { id: 'binary', name: 'Otsu 二值化', mode: 'binary', crop: 'full' },
+            { id: 'roi_binary', name: '底部 ROI 二值化', mode: 'binary', crop: 'bottom' },
+            { id: 'roi_binary_up', name: '底部 ROI 二值化 + 2x', mode: 'binary', crop: 'bottom', upsample: 2 }
+        ];
+        
+        // 初始 Notion 資料庫 (加入一些原有東京之行紀錄)
+        const originalNotionData = [
+            { activity: "東京市區逛街", color: "purple", location: "澀谷 SHIBUYA SKY", item: "觀景台門票 2 張", payer: "小美", payerColor: "blue", price: 1800 },
+            { activity: "夜宿溫泉旅館", color: "amber", location: "箱根 溫泉莊", item: "一泊二食 訂金", payer: "百香果", payerColor: "indigo", price: 3500 },
+            { activity: "環球影城", color: "blue", location: "大阪 門口紀念品店", item: "瑪利歐帽子", payer: "思樂冰", payerColor: "pink", price: 1150 },
+            { activity: "環球影城", color: "pink", location: "環球影城 哈利波特區", item: "奶油啤酒", payer: "阿芒", payerColor: "amber", price: 200 }
+        ];
+
+        let notionData = [...originalNotionData];
+
+        window.onload = function() {
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            updateNotionDOM();
+            document.getElementById('userInput').addEventListener('keydown', e => {
+                if (e.key === 'Enter') sendUserText();
+            });
+            initPreprocessUI();
+        };
+
+        function cleanQRString(s) {
+            return (s || '').replace(/\0/g, '').replace(/<NUL>/gi, '').trim();
+        }
+
+        function triggerUserImagePicker() {
+            const input = document.getElementById('invoiceUploadInput');
+            if (input) input.click();
+        }
+
+        function onUserImageSelected(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            const img = document.getElementById('invoicePreviewImg');
+            if (!img) return;
+            const objectUrl = URL.createObjectURL(file);
+            img.onload = function() {
+                URL.revokeObjectURL(objectUrl);
+                preprocessFrames = [];
+                preprocessSummary = null;
+                const stats = document.getElementById('benchmarkStats');
+                if (stats) stats.textContent = '已切換圖片。請點「影像前處理可視化與成功率」重新計算。';
+                previewSelectedPreprocess();
+            };
+            img.src = objectUrl;
+            appendUserMessage(`📷 已上傳圖片：${file.name}`);
+            event.target.value = '';
+        }
+
+        function initPreprocessUI() {
+            const selector = document.getElementById('preprocessSelector');
+            if (!selector) return;
+            selector.innerHTML = PREPROCESS_METHODS
+                .map(m => `<option value="${m.id}">${m.name}</option>`)
+                .join('');
+            previewSelectedPreprocess();
+        }
+
+        function buildSourceCanvasFromImage() {
+            const img = document.getElementById('invoicePreviewImg');
+            if (!img || !img.complete) return null;
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            return canvas;
+        }
+
+        function otsuThreshold(grayArr) {
+            const hist = new Array(256).fill(0);
+            for (let i = 0; i < grayArr.length; i++) hist[grayArr[i]]++;
+            let total = grayArr.length;
+            let sum = 0;
+            for (let i = 0; i < 256; i++) sum += i * hist[i];
+            let sumB = 0, wB = 0, wF = 0;
+            let maxVar = 0, threshold = 127;
+            for (let t = 0; t < 256; t++) {
+                wB += hist[t];
+                if (wB === 0) continue;
+                wF = total - wB;
+                if (wF === 0) break;
+                sumB += t * hist[t];
+                const mB = sumB / wB;
+                const mF = (sum - sumB) / wF;
+                const variance = wB * wF * (mB - mF) * (mB - mF);
+                if (variance > maxVar) {
+                    maxVar = variance;
+                    threshold = t;
+                }
+            }
+            return threshold;
+        }
+
+        function applyPreprocessToCanvas(srcCanvas, method) {
+            let workingCanvas = document.createElement('canvas');
+            let w = srcCanvas.width;
+            let h = srcCanvas.height;
+            let sx = 0, sy = 0, sw = w, sh = h;
+            if (method.crop === 'bottom') {
+                sy = Math.floor(h * 0.5);
+                sh = h - sy;
+            }
+            workingCanvas.width = sw;
+            workingCanvas.height = sh;
+            let ctx = workingCanvas.getContext('2d');
+            ctx.drawImage(srcCanvas, sx, sy, sw, sh, 0, 0, sw, sh);
+
+            if (method.upsample && method.upsample > 1) {
+                const up = document.createElement('canvas');
+                up.width = Math.floor(sw * method.upsample);
+                up.height = Math.floor(sh * method.upsample);
+                const uctx = up.getContext('2d');
+                uctx.imageSmoothingEnabled = true;
+                uctx.drawImage(workingCanvas, 0, 0, up.width, up.height);
+                workingCanvas = up;
+                ctx = workingCanvas.getContext('2d');
+            }
+
+            if (method.mode === 'raw') return workingCanvas;
+
+            const imageData = ctx.getImageData(0, 0, workingCanvas.width, workingCanvas.height);
+            const data = imageData.data;
+            const gray = new Uint8ClampedArray(workingCanvas.width * workingCanvas.height);
+            let min = 255, max = 0;
+            for (let i = 0, g = 0; i < data.length; i += 4, g++) {
+                const v = Math.round(data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
+                gray[g] = v;
+                if (v < min) min = v;
+                if (v > max) max = v;
+            }
+            const range = Math.max(1, max - min);
+            const threshold = otsuThreshold(gray);
+
+            for (let i = 0, g = 0; i < data.length; i += 4, g++) {
+                let v = gray[g];
+                if (method.mode === 'contrast') {
+                    v = Math.max(0, Math.min(255, Math.round((v - min) * 255 / range)));
+                } else if (method.mode === 'binary') {
+                    v = gray[g] >= threshold ? 255 : 0;
+                }
+                data[i] = data[i + 1] = data[i + 2] = v;
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+            return workingCanvas;
+        }
+
+        function decodeFromRegionCanvas(canvas, region) {
+            const x = Math.floor(canvas.width * region.x);
+            const y = Math.floor(canvas.height * region.y);
+            const w = Math.floor(canvas.width * region.w);
+            const h = Math.floor(canvas.height * region.h);
+            if (w <= 20 || h <= 20) return null;
+
+            const temp = document.createElement('canvas');
+            temp.width = w;
+            temp.height = h;
+            const tctx = temp.getContext('2d');
+            tctx.drawImage(canvas, x, y, w, h, 0, 0, w, h);
+            const scales = [1, 1.6, 2.4];
+
+            for (const s of scales) {
+                const trial = document.createElement('canvas');
+                trial.width = Math.floor(w * s);
+                trial.height = Math.floor(h * s);
+                const c = trial.getContext('2d');
+                c.imageSmoothingEnabled = true;
+                c.drawImage(temp, 0, 0, trial.width, trial.height);
+                const imageData = c.getImageData(0, 0, trial.width, trial.height);
+                const result = jsQR(imageData.data, trial.width, trial.height, { inversionAttempts: 'attemptBoth' });
+                if (result?.data) return result.data;
+            }
+            return null;
+        }
+
+        function benchmarkSingleMethod(srcCanvas, method) {
+            const processed = applyPreprocessToCanvas(srcCanvas, method);
+            const full = method.crop === 'full';
+            const leftRegion = full ? { x: 0.08, y: 0.53, w: 0.38, h: 0.42 } : { x: 0.06, y: 0.05, w: 0.42, h: 0.9 };
+            const rightRegion = full ? { x: 0.52, y: 0.53, w: 0.38, h: 0.42 } : { x: 0.52, y: 0.05, w: 0.42, h: 0.9 };
+            const leftDecoded = decodeFromRegionCanvas(processed, leftRegion);
+            const rightDecoded = decodeFromRegionCanvas(processed, rightRegion);
+            const leftOk = !!leftDecoded && leftDecoded.includes('WW18355421');
+            const rightOk = !!rightDecoded;
+            return {
+                methodId: method.id,
+                methodName: method.name,
+                canvas: processed,
+                leftDecoded,
+                rightDecoded,
+                leftOk,
+                rightOk
+            };
+        }
+
+        function previewSelectedPreprocess() {
+            const selector = document.getElementById('preprocessSelector');
+            const canvas = document.getElementById('preprocessPreviewCanvas');
+            if (!selector || !canvas) return;
+            const previewCtx = canvas.getContext('2d');
+
+            let frame = preprocessFrames.find(f => f.methodId === selector.value);
+            if (!frame) {
+                const src = buildSourceCanvasFromImage();
+                const method = PREPROCESS_METHODS.find(m => m.id === selector.value) || PREPROCESS_METHODS[0];
+                if (!src || !method) return;
+                frame = benchmarkSingleMethod(src, method);
+            }
+
+            const maxW = 360;
+            const ratio = frame.canvas.width / frame.canvas.height;
+            canvas.width = maxW;
+            canvas.height = Math.max(100, Math.round(maxW / ratio));
+            previewCtx.clearRect(0, 0, canvas.width, canvas.height);
+            previewCtx.drawImage(frame.canvas, 0, 0, canvas.width, canvas.height);
+        }
+
+        function renderBenchmarkStats() {
+            const el = document.getElementById('benchmarkStats');
+            if (!el || !preprocessSummary) return;
+            const rows = preprocessFrames.map(r => {
+                const left = r.leftOk ? '✅ 左碼成功' : '❌ 左碼失敗';
+                const right = r.rightOk ? '✅ 右碼有解出' : '—';
+                return `<li><b>${r.methodName}</b>：${left} ${right}</li>`;
+            }).join('');
+            el.innerHTML = `
+                <div><b>左碼成功率：</b>${preprocessSummary.leftSuccess}/${preprocessSummary.total}（${preprocessSummary.leftRate}%）</div>
+                <div><b>任一碼成功率：</b>${preprocessSummary.anySuccess}/${preprocessSummary.total}（${preprocessSummary.anyRate}%）</div>
+                <div class="text-[9px] text-slate-500">註：此成功率為前處理後由 jsQR 實際解碼結果，受拍攝角度與反光影響。</div>
+                <ul class="mt-1 space-y-0.5">${rows}</ul>
+            `;
+        }
+
+        function runPreprocessBenchmark() {
+            const src = buildSourceCanvasFromImage();
+            if (!src) {
+                appendBotMessage('<span class="text-red-400">發票圖片尚未載入完成，請稍候再試。</span>');
+                return;
+            }
+
+            preprocessFrames = PREPROCESS_METHODS.map(m => benchmarkSingleMethod(src, m));
+            const total = preprocessFrames.length;
+            const leftSuccess = preprocessFrames.filter(f => f.leftOk).length;
+            const anySuccess = preprocessFrames.filter(f => f.leftOk || f.rightOk).length;
+            preprocessSummary = {
+                total,
+                leftSuccess,
+                anySuccess,
+                leftRate: Math.round((leftSuccess / total) * 100),
+                anyRate: Math.round((anySuccess / total) * 100)
+            };
+
+            previewSelectedPreprocess();
+            renderBenchmarkStats();
+            appendBotMessage(`已完成影像前處理測試：左碼成功率 ${preprocessSummary.leftRate}%（${leftSuccess}/${total}），任一碼成功率 ${preprocessSummary.anyRate}%。`);
+        }
+
+        function lookupSellerByBan(ban) {
+            const row = MERCHANT_DB[ban];
+            if (!row) {
+                return { ban, displayBrand: '未知商家', registeredName: '—', address: '—',
+                    businessCategory: '—', businessItem: '—', status: '—', publicBrand: '—' };
+            }
+            const isAnShin = (row.brand || row.registeredName || '').includes('安心食品');
+            return {
+                ...row,
+                displayBrand: row.publicBrand || (isAnShin ? '摩斯漢堡 MOS BURGER' : row.brand),
+                categoryLabel: row.businessCategory || row.businessItem
+            };
+        }
+
+        function formatPayerDisplay(payer, isDefault) {
+            return isDefault ? `${payer} (預設)` : payer;
+        }
+
+        function extractPayerFromText(text) {
+            if (!text) return null;
+            if (/(^|[\s，。、「」])(我|本人|自己|愛文芒果)($|[\s，。、「」])/.test(text)) return '阿芒';
+            for (const name of KNOWN_PAYERS) {
+                if (text.includes(name)) return name;
+            }
+            const m = text.match(/(.{1,8}?)(買的|付的|付款|請客)/);
+            if (m && m[1].trim().length >= 2) return m[1].trim();
+            return null;
+        }
+
+        function isNewLedgerRequest(text) {
+            return /買了|記帳|發票|上傳|元|退費|載具|掃描|QR|摩斯|九份|浮潛/i.test(text);
+        }
+
+        function renderLedgerCard(entry) {
+            const payer = formatPayerDisplay(entry.payer, entry.payerIsDefault);
+            const extra = entry.activityNote
+                ? `<p class="text-[10px] text-amber-400/90 mt-1">${entry.activityNote}</p>` : '';
+            return `
+                <div class="space-y-2 text-xs">
+                    <p class="text-green-400 font-bold"><i class="fa-solid fa-circle-check"></i> 記帳完成</p>
+                    <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 space-y-1 text-slate-300">
+                        <div><strong>📍 地點：</strong> ${entry.location}</div>
+                        <div><strong>🏷️ 活動：</strong> <span class="bg-purple-800 text-purple-100 px-1.5 py-0.5 rounded text-[9px]">${entry.activity.name}</span></div>
+                        <div><strong>🛒 物品：</strong> ${entry.item}</div>
+                        <div><strong>💰 金額：</strong> $${entry.amount} TWD</div>
+                        <div><strong>👤 付款人：</strong> ${payer}</div>
+                    </div>
+                    ${extra}
+                    <p class="text-[10px] text-slate-400">已同步至 Notion 旅遊記帳表 ⚡️</p>
+                </div>`;
+        }
+
+        function commitLedgerEntry(entry) {
+            const payerDisplay = formatPayerDisplay(entry.payer, !!entry.payerIsDefault);
+            appendBotMessage(renderLedgerCard(entry));
+            notionData.push({
+                activity: entry.activity.name,
+                color: entry.activity.color,
+                location: entry.location,
+                item: entry.item,
+                payer: payerDisplay,
+                payerColor: 'blue',
+                price: entry.amount
+            });
+            updateNotionDOM(true);
+            isSimulating = false;
+        }
+
+        function beginLedgerWithPayerCheck(draft) {
+            if (draft.payer) {
+                commitLedgerEntry({ ...draft, payerIsDefault: false });
+                return;
+            }
+            pendingLedger = { draft };
+            isSimulating = false;
+            appendBotMessage(`
+                <div class="text-xs space-y-1">
+                    <p class="text-amber-300 font-bold"><i class="fa-solid fa-user-tag"></i> 請問是誰購買的？</p>
+                    <p class="text-slate-400 text-[10px]">請直接回覆姓名（如：小美、阿芒）。若未回覆或傳送<strong>新的記帳需求</strong>，將使用預設記帳人物 <b>${DEFAULT_PAYER} (預設)</b>。</p>
+                </div>`);
+        }
+
+        function flushPendingWithDefault() {
+            if (!pendingLedger) return false;
+            const draft = pendingLedger.draft;
+            pendingLedger = null;
+            appendBotMessage(`<p class="text-[10px] text-slate-400">未收到付款人姓名，上一筆改以 <b>${DEFAULT_PAYER} (預設)</b> 記帳。</p>`);
+            commitLedgerEntry({ ...draft, payer: DEFAULT_PAYER, payerIsDefault: true });
+            return true;
+        }
+
+        function handlePendingPayerReply(text) {
+            if (!pendingLedger) return false;
+            if (isNewLedgerRequest(text)) {
+                flushPendingWithDefault();
+                return 'continue';
+            }
+            const rawPayer = extractPayerFromText(text) || text.trim().slice(0, 12);
+            const payer = rawPayer || DEFAULT_PAYER;
+            const draft = pendingLedger.draft;
+            pendingLedger = null;
+            commitLedgerEntry({ ...draft, payer, payerIsDefault: !rawPayer });
+            return 'done';
+        }
+
+        /** 載具 API「三、查詢發票明細」模擬 JSON（規格 1693297176294_0.pdf） */
+        function buildCarrierInvoiceDetailApi() {
+            return {
+                v: '1.0',
+                code: '200',
+                msg: '查詢成功',
+                invNum: 'WW18355421',
+                invDate: '2026-02-24',
+                sellerName: '安心食品服務股份有限公司和平建國門市部',
+                invStatus: '已開立',
+                invPeriod: '11502',
+                sellerBan: '75982588',
+                sellerAddress: '臺北市大安區龍生里和平東路２段４９―１號１樓',
+                invoiceTime: '17:15:55',
+                buyerBan: '0000000000',
+                currency: 'TWD',
+                amount: '45',
+                details: [
+                    { rowNum: '1', description: '培根雞蛋堡', quantity: '1', unitPrice: '45', amount: '45' }
+                ]
+            };
+        }
+
+        function inferFallbackActivityCategory(sellerName, sellerAddress, amount) {
+            const blob = `${sellerName}${sellerAddress}`;
+            if (/超商|7-11|7-ELEVEN|全家|萊爾富|OK/.test(blob)) return { name: '便利超商', color: 'slate' };
+            if (/摩斯|安心食品|速食|麥當勞|肯德基/.test(blob)) return { name: '連鎖速食', color: 'emerald' };
+            if (amount > 0 && amount < 100) return { name: '便利超商', color: 'slate' };
+            if (amount >= 500) return { name: '購物消費', color: 'slate' };
+            return { name: '一般消費', color: 'slate' };
+        }
+
+        function matchActivityFromCarrierApi(api) {
+            const addr = api.sellerAddress || '';
+            const seller = api.sellerName || '';
+            const blob = addr + seller;
+            const hour = parseInt((api.invoiceTime || '12:00:00').split(':')[0], 10);
+            const amount = parseInt(api.amount, 10) || 0;
+
+            for (const trip of TRIP_ACTIVITIES) {
+                if (trip.keywords.some(kw => blob.includes(kw))) {
+                    let name = trip.name;
+                    if (trip.name === '東京市區逛街' && hour >= 14 && hour < 18) {
+                        name = '東京市區逛街 · 下午茶';
+                    }
+                    return { matched: true, activity: { name, color: trip.color }, activityNote: null };
+                }
+            }
+            const fallback = inferFallbackActivityCategory(seller, addr, amount);
+            return {
+                matched: false,
+                activity: fallback,
+                activityNote: `本次消費不符合既有旅遊活動（比對：開立日期 ${api.invDate}、時間 ${api.invoiceTime}、地址 ${addr}）。已建立新類別「${fallback.name}」，金額 $${amount}。`
+            };
+        }
+
+        function draftFromCarrierApi(api) {
+            const merchant = lookupSellerByBan(api.sellerBan);
+            const { matched, activity, activityNote } = matchActivityFromCarrierApi(api);
+            const items = (api.details || []).map(d => `${d.description} x${d.quantity}`).join('、');
+            const branch = (api.sellerName || '').replace(/安心食品服務股份有限公司/, '').trim();
+            return {
+                location: api.sellerAddress || merchant.address,
+                activity,
+                activityNote,
+                item: items || '—',
+                amount: parseInt(api.amount, 10) || 0,
+                payer: null,
+                meta: { source: 'carrier', matched, invNum: api.invNum, invDate: api.invDate, invoiceTime: api.invoiceTime }
+            };
+        }
+
+        function draftFromInvoiceRecord(record) {
+            return {
+                location: record.location + (record.storeNo ? ` · 店號 ${record.storeNo}` : ''),
+                activity: record.activity,
+                activityNote: null,
+                item: record.items[0] ? `${record.items[0].name} x${record.items[0].qty}` : record.itemText,
+                amount: record.total || 0,
+                payer: record.payer || null
+            };
+        }
+
+        // 切換 LineBot
+        function switchBot() {
+            const selector = document.getElementById('botSelector');
+            currentBot = selector.value;
+            
+            const chatContainer = document.getElementById('chatContainer');
+            const botStatus = document.getElementById('botStatus');
+            const chatBotName = document.getElementById('chatBotName');
+            
+            const smartScenarios = document.getElementById('smartBotScenarios');
+            const tradScenarios = document.getElementById('traditionalBotScenarios');
+
+            chatContainer.innerHTML = `<div class="text-center text-xs text-slate-500 my-2">2026年5月28日 上午10:55</div>`;
+
+            if (currentBot === 'smart') {
+                botStatus.innerHTML = `<i class="fa-solid fa-brain text-emerald-400"></i> AI 語意推理中`;
+                chatBotName.innerText = "學習用LineBot";
+                smartScenarios.classList.remove('hidden');
+                tradScenarios.classList.add('hidden');
+                
+                appendBotMessage("歡迎來到旅遊記帳助手！👋<br>請選擇發票掃描、載具同步或輸入對話開始記帳。若未標註付款人，我會再詢問您是誰購買的。");
+            } else {
+                botStatus.innerHTML = `<i class="fa-solid fa-list-check text-amber-400"></i> 手動關聯流程`;
+                chatBotName.innerText = "雲端旅遊記帳Linebot";
+                smartScenarios.classList.add('hidden');
+                tradScenarios.classList.remove('hidden');
+                
+                appendBotMessage("您好！我是記帳小幫手。在記帳前，請先點擊下方<strong>「我要記帳」</strong>開始傳統逐步點選流程。");
+            }
+        }
+
+        // 發送訊息輔助
+        function appendUserMessage(text, imageSrc = null) {
+            const chatContainer = document.getElementById('chatContainer');
+            let contentHTML = `<div class="bg-emerald-600 text-white p-3 rounded-2xl rounded-tr-none text-xs md:text-sm shadow">${text}</div>`;
+            
+            if (imageSrc) {
+                contentHTML = `
+                    <div class="bg-emerald-600 text-white p-2 rounded-2xl rounded-tr-none text-xs md:text-sm shadow space-y-2 max-w-[220px]">
+                        <img src="${imageSrc}" alt="上傳發票" class="rounded border border-emerald-400/50 w-full object-cover max-h-40 bg-white">
+                        <p class="text-[10px]">${text}</p>
+                    </div>
+                `;
+            }
+
+            const userMsg = document.createElement('div');
+            userMsg.className = "flex items-start gap-2.5 justify-end";
+            userMsg.innerHTML = `
+                <div class="flex flex-col gap-1 max-w-[80%] items-end">
+                    <span class="text-[10px] text-slate-400">阿茫</span>
+                    ${contentHTML}
+                    <span class="text-[9px] text-slate-500">17:15</span>
+                </div>
+            `;
+            chatContainer.appendChild(userMsg);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function appendBotMessage(text) {
+            const chatContainer = document.getElementById('chatContainer');
+            const botMsg = document.createElement('div');
+            botMsg.className = "flex items-start gap-2.5";
+            botMsg.innerHTML = `
+                <div class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                    旅
+                </div>
+                <div class="flex flex-col gap-1 max-w-[80%]">
+                    <span class="text-[10px] text-slate-400">${currentBot === 'smart' ? '學習用LineBot' : '雲端旅遊記帳Linebot'}</span>
+                    <div class="bg-slate-800 text-slate-100 p-3 rounded-2xl rounded-tl-none text-xs md:text-sm shadow border border-slate-700">
+                        ${text}
+                    </div>
+                    <span class="text-[9px] text-slate-500 self-start">17:16</span>
+                </div>
+            `;
+            chatContainer.appendChild(botMsg);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function toggleLoading(show, text = "") {
+            const indicator = document.getElementById('loadingIndicator');
+            const loadingText = document.getElementById('loadingText');
+            if (show) {
+                indicator.classList.remove('hidden');
+                loadingText.innerText = text;
+            } else {
+                indicator.classList.add('hidden');
+            }
+        }
+
+        // ========== 財政部電子發票 QR 規格解析 ==========
+        function hexToAmount(hex) {
+            const n = parseInt(hex, 16);
+            return Number.isFinite(n) ? n : null;
+        }
+
+        function parseLeftQR(str) {
+            if (!str || str.length < 77) return null;
+            const rocYear = parseInt(str.slice(10, 13), 10);
+            const month = str.slice(13, 15);
+            const day = str.slice(15, 17);
+            return {
+                invoiceNo: str.slice(0, 10),
+                dateRoc: str.slice(10, 17),
+                dateGregorian: `${rocYear + 1911}-${month}-${day}`,
+                randomCode: str.slice(17, 21),
+                salesAmount: hexToAmount(str.slice(21, 29)),
+                totalAmount: hexToAmount(str.slice(29, 37)),
+                buyerBan: str.slice(37, 45),
+                sellerBan: str.slice(45, 53),
+                encryptInfo: str.slice(53, 77),
+                extension: str.length > 77 ? str.slice(77) : ''
+            };
+        }
+
+        function parseItemSegment(payload) {
+            const items = [];
+            const parts = payload.split(':').filter(p => p !== '' && p !== '**********');
+            let i = 0;
+            while (i < parts.length) {
+                const name = parts[i++];
+                if (!name || name.length <= 1 && /^\d+$/.test(name)) continue;
+                if (i + 1 < parts.length && /^\d+$/.test(parts[i]) && /^\d+$/.test(parts[i + 1])) {
+                    items.push({ name, qty: parseInt(parts[i++], 10), price: parseInt(parts[i++], 10) });
+                }
+            }
+            return items;
+        }
+
+        function parseItemsFromQR(str) {
+            if (!str || str === '**' || str.length <= 2) return [];
+            let payload = str;
+            const starIdx = str.indexOf('**');
+            if (starIdx >= 0) payload = str.slice(starIdx + 2);
+            if (str.startsWith('**')) payload = str.slice(2);
+            return parseItemSegment(payload);
+        }
+
+        /** 左碼 77 字元後的延伸段（品名:數量:單價） */
+        function parseItemsFromLeftQR(leftStr) {
+            if (!leftStr || leftStr.length <= 77) return [];
+            const parts = leftStr.slice(77).split(':');
+            for (let i = parts.length - 1; i >= 2; i--) {
+                if (/^\d+$/.test(parts[i]) && /^\d+$/.test(parts[i - 1])) {
+                    const price = parseInt(parts[i], 10);
+                    const qty = parseInt(parts[i - 1], 10);
+                    let name = (parts[i - 2] || '').replace(/\s*\d{4,}\s*$/, '').trim();
+                    if (name && !/^\*+$/.test(name) && !/^\d+$/.test(name)) {
+                        return [{ name, qty, price }];
+                    }
+                }
+            }
+            return [];
+        }
+
+        function classifyQRStrings(strings) {
+            const left = [], right = [], other = [];
+            for (const s of strings) {
+                if (s.startsWith('**') || (s.includes('**') && !/^[A-Z]{2}\d{8}/.test(s.slice(0, 10)))) {
+                    right.push(s);
+                } else if (/^[A-Z]{2}\d{8}/.test(s) && s.length >= 77) {
+                    left.push(s);
+                } else if (s.includes('**')) {
+                    right.push(s);
+                } else {
+                    other.push(s);
+                }
+            }
+            return { left: left[0] || null, right: right[0] || null, other };
+        }
+
+        function ocrExtractInvoiceFields(text) {
+            const t = (text || '').replace(/\s+/g, ' ');
+            const invoiceNo = (t.match(/[A-Z]{2}[-\s]?\d{8}/) || [])[0]?.replace(/[-\s]/g, '') || null;
+            const dateMatch = t.match(/(20\d{2})[-\/](\d{2})[-\/](\d{2})/);
+            const timeMatch = t.match(/(\d{2}):(\d{2}):(\d{2})/);
+            const randomCode = (t.match(/隨機碼[:\s]*(\d{4})/) || [])[1] || null;
+            const total = parseInt((t.match(/總計[:\s]*(\d+)/) || [])[1], 10) || (t.match(/\b45\b/) ? 45 : null);
+            const sellerBan = (t.match(/賣方[:\s]*(\d{8})/) || [])[1] || null;
+            const storeNo = (t.match(/店號[:\s]*(\d+)/) || [])[1] || null;
+            let dateRoc = null;
+            if (dateMatch) {
+                const roc = parseInt(dateMatch[1], 10) - 1911;
+                dateRoc = `${roc}${dateMatch[2]}${dateMatch[3]}`;
+            }
+            return { invoiceNo, dateGregorian: dateMatch ? `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}` : null,
+                dateRoc, randomCode, total, sellerBan, storeNo, hour: timeMatch ? parseInt(timeMatch[1], 10) : null };
+        }
+
+        function buildLeftQRFromOcr(ocr) {
+            if (!ocr.invoiceNo || !ocr.dateRoc) return null;
+            const totalHex = (ocr.total != null ? ocr.total : 0).toString(16).padStart(8, '0');
+            return ocr.invoiceNo + ocr.dateRoc + (ocr.randomCode || '0000') +
+                '00000000' + totalHex + '00000000' + (ocr.sellerBan || '00000000') + '0'.repeat(24);
+        }
+
+        function mergeInvoiceRecord(qrLeft, qrRight, ocr) {
+            const leftParsed = qrLeft ? parseLeftQR(qrLeft) : (ocr ? parseLeftQR(buildLeftQRFromOcr(ocr)) : null);
+            let items = parseItemsFromLeftQR(qrLeft);
+            if (!items.length && qrRight) items = parseItemsFromQR(qrRight);
+            const sellerBan = leftParsed?.sellerBan || ocr?.sellerBan;
+            const merchant = lookupSellerByBan(sellerBan);
+            const total = leftParsed?.totalAmount ?? ocr?.total;
+            const hour = ocr?.hour ?? 17;
+            const itemText = items.length
+                ? items.map(i => `${i.name} x${i.qty} ($${i.price})`).join('、')
+                : '—';
+            const branchShort = (merchant.registeredName || '').replace(/安心食品服務股份有限公司/, '').trim() || '門市';
+            const location = `${merchant.displayBrand}（${branchShort}）· ${merchant.address || '—'}`;
+            const activity = classifyActivity({ location, item: itemText, total, hour, merchant, items });
+            return {
+                leftParsed, items, itemText, total, merchant, location, activity,
+                storeNo: ocr?.storeNo,
+                sources: { qrLeft: !!qrLeft, qrRight: !!qrRight, etax: !!MERCHANT_DB[sellerBan] }
+            };
+        }
+
+        function classifyActivity({ location, item, hour, merchant, items }) {
+            const it = (item || '').toLowerCase();
+            const cat = (merchant?.categoryLabel || '').toLowerCase();
+            if (location.includes('九份') || it.includes('草仔粿')) return { name: '九份一日遊', color: 'amber' };
+            if (cat.includes('速食') || (merchant?.displayBrand || '').includes('摩斯')) {
+                const itemName = items?.[0]?.name || '';
+                if (itemName.includes('蛋堡') || itemName.includes('培根') || (hour >= 6 && hour < 11)) {
+                    return { name: '早餐 · 連鎖速食', color: 'emerald' };
+                }
+                if (hour >= 14 && hour < 18) return { name: '東京市區逛街 · 下午茶', color: 'purple' };
+                return { name: '東京市區逛街 · 速食', color: 'purple' };
+            }
+            if (it.includes('浮潛') || it.includes('退費')) return { name: '水上活動', color: 'red' };
+            return { name: '一般消費', color: 'slate' };
+        }
+
+        function updateDecodePanel(result, ocrText) {
+            const badge = document.getElementById('qrScanBadge');
+            const leftRaw = document.getElementById('decodeLeftRaw');
+            const rightRaw = document.getElementById('decodeRightRaw');
+            const leftFields = document.getElementById('decodeLeftFields');
+            const rightItems = document.getElementById('decodeRightItems');
+            document.getElementById('decodeOcrText').textContent = ocrText || '—';
+
+            if (result.qrLeft) {
+                leftRaw.textContent = result.qrLeft.slice(0, 120) + (result.qrLeft.length > 120 ? '…' : '');
+                const p = parseLeftQR(result.qrLeft);
+                if (p) {
+                    leftFields.innerHTML = `
+                        <span>號碼 <b>${p.invoiceNo}</b></span><span>日期 <b>${p.dateGregorian}</b></span>
+                        <span>隨機碼 <b>${p.randomCode}</b></span><span>總計 <b>$${p.totalAmount}</b></span>
+                        <span>賣方 <b>${p.sellerBan}</b></span><span>Hex總額 <b>${result.qrLeft.slice(29,37)}</b></span>`;
+                }
+            } else if (result.ocrBuiltLeft) {
+                leftRaw.textContent = '(由 OCR 重建左碼核心 77 字元)';
+                const p = parseLeftQR(result.ocrBuiltLeft);
+                leftFields.innerHTML = p ? `<span>號碼 <b>${p.invoiceNo}</b></span><span>總計 <b>$${p.totalAmount}</b></span>` : '';
+            } else {
+                leftRaw.textContent = '未解碼';
+                leftFields.innerHTML = '';
+            }
+
+            if (result.qrRight) {
+                const isEmptyRight = result.qrRight === '**' || result.qrRight.length <= 2;
+                rightRaw.textContent = isEmptyRight ? '**（僅起始符號，無接續品項）' : result.qrRight.slice(0, 100);
+                const items = parseItemsFromQR(result.qrRight);
+                rightItems.innerHTML = isEmptyRight
+                    ? '<span class="text-slate-500">品項已全數記載於左碼延伸段</span>'
+                    : (items.length ? items.map(i => `<div>🛒 ${i.name} × ${i.qty} · $${i.price}</div>`).join('')
+                        : '<span class="text-amber-600">右碼有資料但格式待確認</span>');
+            } else {
+                rightRaw.textContent = '—';
+                rightItems.innerHTML = '';
+            }
+
+            const leftItems = parseItemsFromLeftQR(result.qrLeft);
+            if (leftItems.length && rightItems) {
+                rightItems.innerHTML = `<span class="text-emerald-700">🛒 ${leftItems[0].name} × ${leftItems[0].qty} · $${leftItems[0].price}（來自左碼）</span>`;
+            }
+
+            badge.textContent = '內建 QR 已解析';
+            badge.className = 'text-[9px] px-2 py-0.5 rounded bg-emerald-100 text-emerald-700';
+        }
+
+        function escapeHtml(s) {
+            return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function processPresetInvoiceQR() {
+            if (isSimulating) return;
+            if (pendingLedger) flushPendingWithDefault();
+            isSimulating = true;
+            const scanLine = document.getElementById('scanLine');
+            scanLine.classList.remove('hidden');
+
+            const qrLeft = cleanQRString(PRESET_QR_LEFT);
+            const qrRight = cleanQRString(PRESET_QR_RIGHT);
+
+            appendUserMessage('📷 傳送摩斯漢堡電子發票（證明聯 WW18355421）', SAMPLE_INVOICE_URL);
+            toggleLoading(true, '解析 QR Code（財政部 77 碼規格）…');
+
+            setTimeout(() => {
+                toggleLoading(false);
+                scanLine.classList.add('hidden');
+                const ocr = { ...SAMPLE_OCR_FALLBACK };
+                const record = mergeInvoiceRecord(qrLeft, qrRight, ocr);
+                lastDecodeResult = { qrLeft, qrRight, record };
+                updateDecodePanel({ qrLeft, qrRight }, '證明聯：MOS BURGER');
+
+                const m = record.merchant;
+                const p = record.leftParsed;
+                appendBotMessage(`
+                    <div class="space-y-2 text-xs">
+                        <p class="text-emerald-400 font-bold"><i class="fa-solid fa-receipt"></i> 發票解析完成</p>
+                        <p class="text-[10px] text-slate-400">發票 ${p?.invoiceNo} · ${p?.dateGregorian} · ${m.displayBrand} · $${record.total}</p>
+                        <p class="text-[10px] text-slate-400">品項：${record.itemText}</p>
+                    </div>`);
+
+                const draft = draftFromInvoiceRecord(record);
+                beginLedgerWithPayerCheck(draft);
+            }, 500);
+        }
+
+        function simulateCarrierAPI() {
+            if (isSimulating) return;
+            if (pendingLedger) flushPendingWithDefault();
+            isSimulating = true;
+            appendUserMessage('📱 手機條碼載具 · 雲端發票同步');
+            toggleLoading(true, '呼叫 API「三、查詢發票明細」…');
+
+            setTimeout(() => {
+                toggleLoading(false);
+                const api = buildCarrierInvoiceDetailApi();
+                const draft = draftFromCarrierApi(api);
+                const matchText = draft.meta.matched
+                    ? `<span class="text-emerald-400">✓ 符合旅遊活動「${draft.activity.name}」</span>`
+                    : `<span class="text-amber-400">⚠ 無符合的旅遊活動</span>`;
+
+                appendBotMessage(`
+                    <div class="space-y-2 text-xs">
+                        <p class="text-violet-400 font-bold"><i class="fa-solid fa-cloud"></i> 載具 API · 查詢發票明細</p>
+                        <p class="text-[10px] text-slate-500">規格參考：<a class="text-sky-400 underline" href="https://www.einvoice.nat.gov.tw/static/ptl/ein_upload/attachments/1693297176294_0.pdf" target="_blank">財政部 API 文件</a></p>
+                        <pre class="bg-slate-900 p-2 rounded border border-slate-700 text-[9px] text-slate-400 overflow-x-auto max-h-32">${escapeHtml(JSON.stringify(api, null, 2))}</pre>
+                        <p class="text-[10px] text-slate-400">
+                            活動推論（賣方地址 + 開立日期 ${api.invDate} + 時間 ${api.invoiceTime}）：${matchText}
+                        </p>
+                        ${draft.activityNote ? `<p class="text-[10px] text-amber-400">${draft.activityNote}</p>` : ''}
+                    </div>`);
+
+                beginLedgerWithPayerCheck(draft);
+            }, 900);
+        }
+
+        function sendUserText() {
+            const input = document.getElementById('userInput');
+            const text = input.value.trim();
+            if (!text) return;
+            input.value = '';
+
+            if (pendingLedger) {
+                appendUserMessage(text);
+                const result = handlePendingPayerReply(text);
+                if (result === 'continue') {
+                    routeUserLedgerRequest(text);
+                }
+                return;
+            }
+            appendUserMessage(`「${text}」`);
+            routeUserLedgerRequest(text);
+        }
+
+        function routeUserLedgerRequest(text) {
+            if (isSimulating) return;
+            processDialogueText(text, true);
+        }
+
+        function processDialogueText(text, userAlreadyShown = false) {
+            if (isSimulating) return;
+            if (pendingLedger) flushPendingWithDefault();
+            isSimulating = true;
+            if (!userAlreadyShown) appendUserMessage(`「${text}」`);
+            toggleLoading(true, 'NLP 實體萃取：地點、物品、金額…');
+            setTimeout(() => {
+                toggleLoading(false);
+                const parsed = nlpParseDialogue(text);
+                const activity = classifyActivity({
+                    location: parsed.location, item: parsed.item, total: parsed.amount, items: [{ name: parsed.item }]
+                });
+                const draft = {
+                    location: parsed.location,
+                    activity,
+                    item: parsed.item,
+                    amount: parsed.amount,
+                    payer: parsed.payer,
+                    activityNote: null
+                };
+                appendBotMessage(`
+                    <div class="text-xs text-slate-400 space-y-1">
+                        <p class="text-sky-400 font-bold">對話解析完成</p>
+                        <p class="text-[10px]">地點 ${parsed.location} · 物品 ${parsed.item} · $${parsed.amount}</p>
+                    </div>`);
+                beginLedgerWithPayerCheck(draft);
+            }, 700);
+        }
+
+        function nlpParseDialogue(text) {
+            const amount = parseInt((text.match(/(\d+)\s*元/) || [])[1], 10) || 0;
+            const loc = (text.match(/(九份[^，。]*?)/) || text.match(/在([^跟買了]+)/) || [])[1]?.trim() || '未知地點';
+            const itemM = text.match(/買了?([^共\d]+?)(\d+個)?共?/);
+            const item = itemM ? (itemM[1].trim() + (itemM[2] ? ` (${itemM[2]})` : '')) : '未辨識品項';
+            const payer = extractPayerFromText(text) || (text.includes('阿伯') ? '阿芒' : null);
+            return { location: loc.replace(/跟|在/g, '').trim() || loc, item, amount, payer };
+        }
+
+        // 其他場景模擬
+        function simulateDialogueUpload() {
+            processDialogueText('在九份跟老街阿伯買了草仔粿3個共150元');
+        }
+
+        function simulateComplexContext() {
+            if (isSimulating) return;
+            if (pendingLedger) flushPendingWithDefault();
+            isSimulating = true;
+            appendUserMessage("「買了浮潛體驗行程，但後來因為下雨取消，退費 2000 元」");
+            toggleLoading(true, "分析否定與退費語意…");
+            setTimeout(() => {
+                toggleLoading(false);
+                const draft = {
+                    location: '沖繩浮潛中心',
+                    activity: { name: '水上活動', color: 'red' },
+                    item: '浮潛行程取消退款',
+                    amount: -2000,
+                    payer: '小美',
+                    activityNote: null
+                };
+                commitLedgerEntry({ ...draft, payerIsDefault: false });
+            }, 900);
+        }
+
+        // 傳統引導流程
+        function traditionalStep1() {
+            if (isSimulating) return;
+            isSimulating = true;
+
+            appendUserMessage("我要記帳");
+            
+            setTimeout(() => {
+                appendBotMessage(`
+                    <div class="text-xs">
+                        <p class="font-bold">【步驟 1】請手動選擇記帳地點：</p>
+                        <div class="grid grid-cols-2 gap-2 mt-2">
+                            <button onclick="selectTradLocation('頤堤港')" class="bg-slate-700 hover:bg-slate-600 py-1 px-2 rounded">頤堤港</button>
+                            <button onclick="selectTradLocation('澀谷')" class="bg-slate-700 hover:bg-slate-600 py-1 px-2 rounded">澀谷 SKY</button>
+                        </div>
+                    </div>
+                `);
+                isSimulating = false;
+            }, 800);
+        }
+
+        let selectedLocation = "";
+        function selectTradLocation(loc) {
+            selectedLocation = loc;
+            appendUserMessage(`地點：${loc}`);
+
+            setTimeout(() => {
+                appendBotMessage(`
+                    <div class="text-xs">
+                        <p class="font-bold">【步驟 2】請選擇付錢的人：</p>
+                        <div class="grid grid-cols-3 gap-1.5 mt-2">
+                            <button onclick="selectTradPayer('百香果')" class="bg-slate-700 hover:bg-slate-600 py-1 px-1.5 rounded">百香果</button>
+                            <button onclick="selectTradPayer('小美')" class="bg-slate-700 hover:bg-slate-600 py-1 px-1.5 rounded">小美</button>
+                            <button onclick="selectTradPayer('思樂冰')" class="bg-slate-700 hover:bg-slate-600 py-1 px-1.5 rounded">思樂冰</button>
+                        </div>
+                    </div>
+                `);
+            }, 800);
+        }
+
+        let selectedPayer = "";
+        function selectTradPayer(payer) {
+            selectedPayer = payer;
+            appendUserMessage(`付款人：${payer}`);
+
+            setTimeout(() => {
+                appendBotMessage(`
+                    <div class="text-xs">
+                        <p class="font-bold">【步驟 3】請在手機鍵盤上手動敲入品名與金額：</p>
+                        <div class="mt-2">
+                            <button onclick="simulateKeyboardInput('小黃瓜', 100)" class="bg-emerald-600 hover:bg-emerald-500 text-xs py-1.5 px-3 rounded font-bold w-full">
+                                模擬手動打字：「小黃瓜 100元」
+                            </button>
+                        </div>
+                    </div>
+                `);
+            }, 800);
+        }
+
+        function simulateKeyboardInput(item, price) {
+            appendUserMessage(`品名：${item}，價格：${price}`);
+
+            setTimeout(() => {
+                appendBotMessage(`
+                    <div class="space-y-1 text-xs">
+                        <p class="text-green-400 font-bold"><i class="fa-solid fa-circle-check"></i> 手動記帳成功！</p>
+                        <p class="text-[10px] text-slate-400">對比一鍵掃描，傳統多步操作的輸入負擔確實極高。</p>
+                    </div>
+                `);
+
+                notionData.push({
+                    activity: "手動隨興記",
+                    color: "slate",
+                    location: selectedLocation,
+                    item: item,
+                    payer: selectedPayer,
+                    payerColor: "blue",
+                    price: price
+                });
+
+                updateNotionDOM(true);
+            }, 800);
+        }
+
+        // 更新右側 Notion Table
+        function updateNotionDOM(highlightLast = false) {
+            const tbody = document.getElementById('notionTableBody');
+            tbody.innerHTML = '';
+            let totalSpent = 0;
+
+            notionData.forEach((row, index) => {
+                totalSpent += row.price;
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+                if (highlightLast && index === notionData.length - 1) {
+                    tr.classList.add('row-highlight');
+                }
+
+                const badgeColorMap = {
+                    purple: "bg-purple-100 text-purple-800",
+                    amber: "bg-amber-100 text-amber-800",
+                    blue: "bg-blue-100 text-blue-800",
+                    pink: "bg-pink-100 text-pink-800",
+                    emerald: "bg-emerald-100 text-emerald-800",
+                    red: "bg-red-100 text-red-800",
+                    slate: "bg-slate-100 text-slate-800"
+                };
+
+                const dotColorMap = {
+                    blue: "bg-blue-400",
+                    indigo: "bg-indigo-400",
+                    pink: "bg-pink-400",
+                    amber: "bg-amber-400"
+                };
+
+                const badgeClass = badgeColorMap[row.color] || "bg-slate-100 text-slate-800";
+                const dotClass = dotColorMap[row.payerColor] || "bg-slate-400";
+                const priceText = row.price < 0 ? `-$${Math.abs(row.price)}` : `$${row.price}`;
+                const priceClass = row.price < 0 ? "text-red-600 font-bold" : "text-slate-800 font-semibold";
+
+                tr.innerHTML = `
+                    <td class="py-2 px-3">
+                        <span class="${badgeClass} text-[10px] px-2 py-0.5 rounded font-medium">${row.activity}</span>
+                    </td>
+                    <td class="py-2 px-3 text-slate-600 font-mono text-[11px]">${row.location}</td>
+                    <td class="py-2 px-3 text-slate-700">${row.item}</td>
+                    <td class="py-2 px-3 text-slate-600">
+                        <span class="inline-flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full ${dotClass}"></span>${row.payer}
+                        </span>
+                    </td>
+                    <td class="py-2 px-3 text-right ${priceClass}">${priceText}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('totalSpentText').innerHTML = `$${totalSpent.toLocaleString()} <span class="text-[10px] font-normal text-slate-500">TWD</span>`;
+        }
+
+        function resetNotionData() {
+            notionData = [...originalNotionData];
+            updateNotionDOM();
+        }
+
+    </script>
+</body>
+</html>

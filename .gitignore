@@ -1,0 +1,6 @@
+.gemini_api_key
+.env
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
