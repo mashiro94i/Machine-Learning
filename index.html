@@ -51,24 +51,94 @@
                     <i class="fa-solid fa-cloud-sun"></i> 雲端旅遊記帳專案系統模擬器
                 </h1>
                 <p class="text-sm text-teal-100 mt-1">
-                    機器學習升級：<strong>LLM 常識推理</strong> 結合 <strong>財政部電子發票 QR Code 解碼演算法</strong>
+                    雲端旅遊記帳 × Notion 同步演示
                 </p>
             </div>
             <div class="flex flex-wrap gap-2 items-center bg-teal-800/40 p-2 rounded-lg text-xs md:text-sm border border-teal-500/20">
                 <span class="flex items-center gap-1">
                     <span class="w-2.5 h-2.5 rounded-full bg-green-400 inline-block animate-pulse"></span> 
-                    真實摩斯發票數據已載入
+                    LineBot 連線中
                 </span>
-                <span class="text-teal-300">|</span>
-                <span>資料：<strong>內建真實 QR + 稅籍查詢</strong></span>
             </div>
         </header>
 
-        <!-- 主體工作區：左邊 Line, 右邊 Notion & 條碼解析 -->
-        <main class="flex-1 grid grid-cols-1 xl:grid-cols-12 gap-6 p-4 md:p-6 overflow-hidden">
-            
-            <!-- 左側：LineBot 視窗區域 (佔 4 欄) -->
-            <section class="xl:col-span-4 flex flex-col bg-slate-900 rounded-2xl shadow-xl overflow-hidden border border-slate-700 min-h-[700px]">
+        <!-- 主體：上方行程／預算，下方 LINE -->
+        <main class="flex-1 flex flex-col gap-6 p-4 md:p-6">
+
+            <!-- 上方：Notion 行程與預算 -->
+            <section class="flex flex-col bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+                <div class="p-5 border-b border-slate-200 bg-slate-50">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2 text-xs text-slate-500">
+                            <i class="fa-solid fa-folder-open"></i> <span>我的工作區</span> / <span>旅遊規劃</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Notion API 雙向連線中
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-3xl">✈️</span>
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                                2026 日本關東、富士山探索之旅
+                            </h2>
+                            <p class="text-xs text-slate-500 mt-0.5">
+                                行程建立者：<strong>Jerry</strong> | 記帳模式：<strong>自動化智慧型分類</strong>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                        <div class="bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+                            <p class="text-[10px] font-bold text-amber-700 uppercase tracking-wider">總預算</p>
+                            <p class="text-lg font-extrabold text-slate-800">$50,000 <span class="text-[10px] font-normal text-slate-500">TWD</span></p>
+                        </div>
+                        <div class="bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
+                            <p class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">已支出總計</p>
+                            <p class="text-lg font-extrabold text-slate-800" id="totalSpentText">$6,650 <span class="text-[10px] font-normal text-slate-500">TWD</span></p>
+                        </div>
+                        <div class="bg-sky-50 p-2.5 rounded-xl border border-sky-200">
+                            <p class="text-[10px] font-bold text-sky-700 uppercase tracking-wider">活動分群</p>
+                            <p class="text-lg font-extrabold text-slate-800">5 個活動分組</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-table-list text-slate-400"></i> 行程消費總覽 (Notion Database View)
+                        </h3>
+                        <button type="button" onclick="resetNotionData()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-2.5 py-1 rounded border border-slate-200 transition">
+                            <i class="fa-solid fa-rotate-left"></i> 重置數據
+                        </button>
+                    </div>
+
+                    <table class="min-w-full text-xs text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-200 text-slate-500 bg-slate-50">
+                                <th class="py-2.5 px-3 font-semibold">活動名稱</th>
+                                <th class="py-2.5 px-3 font-semibold">記帳地點</th>
+                                <th class="py-2.5 px-3 font-semibold">物品細項</th>
+                                <th class="py-2.5 px-3 font-semibold">付款者</th>
+                                <th class="py-2.5 px-3 font-semibold text-right">金額 (TWD)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="notionTableBody" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 下方：LINE -->
+            <section class="flex flex-col">
+                <div class="flex items-center gap-2 mb-3 px-1">
+                    <div class="w-8 h-8 rounded-lg bg-[#06C755] flex items-center justify-center text-white font-bold text-sm shadow">LINE</div>
+                    <h2 class="text-lg font-bold text-slate-800">LINE</h2>
+                    <span class="text-xs text-slate-500">雲端旅遊記帳 LineBot 對話模擬</span>
+                </div>
+
+            <div class="flex flex-col flex-1 bg-slate-900 rounded-2xl shadow-xl overflow-hidden border border-slate-700 min-h-[560px] w-full max-w-3xl">
                 <!-- LineBot 頂部通訊欄 -->
                 <div class="bg-slate-800 p-4 border-b border-slate-700 flex items-center justify-between font-medium">
                     <div class="flex items-center gap-3">
@@ -106,7 +176,7 @@
                             <span class="text-[10px] text-slate-400" id="chatBotName">學習用LineBot</span>
                             <div class="bg-slate-800 text-slate-100 p-3 rounded-2xl rounded-tl-none text-xs md:text-sm shadow">
                                 歡迎來到旅遊記帳助手！👋<br>
-                                支援<strong>發票 QR</strong>、<strong>對話記帳</strong>、<strong>載具 API 查詢發票明細</strong>。請用下方按鈕或輸入框開始記帳。
+                                請選擇發票掃描、載具同步或輸入對話開始記帳。若未標註付款人，我會再詢問您是誰購買的。
                             </div>
                             <span class="text-[9px] text-slate-500 self-start">10:55</span>
                         </div>
@@ -167,142 +237,18 @@
                     <input type="text" id="userInput" placeholder="輸入對話，例如：在九份跟老街阿伯買了草仔粿3個共150元" class="flex-1 bg-slate-900 border border-slate-700 rounded-full px-4 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500">
                     <button type="button" onclick="sendUserText()" class="text-emerald-500 hover:text-emerald-400 transition p-1"><i class="fa-solid fa-paper-plane text-lg"></i></button>
                 </div>
-            </section>
-
-            <!-- 右側：Notion 記帳板 與 發票解析說明 (佔 8 欄，左右拆分) -->
-            <section class="xl:col-span-8 flex flex-col gap-6">
-                
-                <!-- Notion 雲端旅遊記帳板 -->
-                <div class="flex flex-col bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
-                    <div class="p-5 border-b border-slate-200 bg-slate-50">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center gap-2 text-xs text-slate-500">
-                                <i class="fa-solid fa-folder-open"></i> <span>我的工作區</span> / <span>旅遊規劃</span>
-                            </div>
-                            <div class="flex items-center gap-1.5 bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-semibold">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                Notion API 雙向連線中
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <span class="text-3xl">✈️</span>
-                            <div>
-                                <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                                    2026 日本關東、富士山探索之旅
-                                </h2>
-                                <p class="text-xs text-slate-500 mt-0.5">
-                                    行程建立者：<strong>Jerry</strong> | 記帳模式：<strong>自動化智慧型分類</strong>
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- 頂部快照看板 -->
-                        <div class="grid grid-cols-3 gap-4 mt-4">
-                            <div class="bg-amber-50 p-2.5 rounded-xl border border-amber-200">
-                                <p class="text-[10px] font-bold text-amber-700 uppercase tracking-wider">總預算</p>
-                                <p class="text-lg font-extrabold text-slate-800">$50,000 <span class="text-[10px] font-normal text-slate-500">TWD</span></p>
-                            </div>
-                            <div class="bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
-                                <p class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">已支出總計</p>
-                                <p class="text-lg font-extrabold text-slate-800" id="totalSpentText">$5,450 <span class="text-[10px] font-normal text-slate-500">TWD</span></p>
-                            </div>
-                            <div class="bg-sky-50 p-2.5 rounded-xl border border-sky-200">
-                                <p class="text-[10px] font-bold text-sky-700 uppercase tracking-wider">活動分群</p>
-                                <p class="text-lg font-extrabold text-slate-800">5 個活動分組</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Notion 數據表格 -->
-                    <div class="overflow-x-auto p-5">
-                        <div class="flex items-center justify-between mb-3">
-                            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                                <i class="fa-solid fa-table-list text-slate-400"></i> 行程消費總覽 (Notion Database View)
-                            </h3>
-                            <button onclick="resetNotionData()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-2.5 py-1 rounded border border-slate-200 transition">
-                                <i class="fa-solid fa-rotate-left"></i> 重置數據
-                            </button>
-                        </div>
-
-                        <table class="min-w-full text-xs text-left border-collapse">
-                            <thead>
-                                <tr class="border-b border-slate-200 text-slate-500 bg-slate-50">
-                                    <th class="py-2.5 px-3 font-semibold">活動名稱</th>
-                                    <th class="py-2.5 px-3 font-semibold">記帳地點</th>
-                                    <th class="py-2.5 px-3 font-semibold">物品細項</th>
-                                    <th class="py-2.5 px-3 font-semibold">付款者</th>
-                                    <th class="py-2.5 px-3 font-semibold text-right">金額 (TWD)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="notionTableBody" class="divide-y divide-slate-100">
-                                <!-- 預設資料 -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- 財政部規格解碼說明面板與模擬發票視覺 (核心加分項) -->
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    
-                    <!-- 真實發票照片 + 掃描預覽 -->
-                    <div class="lg:col-span-5 bg-white p-5 rounded-2xl shadow-xl border border-slate-200 flex flex-col relative overflow-hidden">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">真實影像 · ZXing + Tesseract</span>
-                            <span id="qrScanBadge" class="text-[9px] px-2 py-0.5 rounded bg-slate-100 text-slate-500">尚未掃描</span>
-                        </div>
-                        <div id="scanLine" class="hidden absolute left-4 right-4 h-1 bg-emerald-500 opacity-75 shadow-md scanner-line z-10"></div>
-                        <div class="relative flex justify-center">
-                            <img id="invoicePreviewImg" src="" alt="摩斯漢堡電子發票" class="max-h-[320px] rounded-lg border border-slate-200 shadow-sm object-contain">
-                            <canvas id="invoiceScanCanvas" class="hidden"></canvas>
-                        </div>
-                        <p class="text-[9px] text-slate-400 mt-2 text-center">左碼含品項「培根雞蛋堡」· 右碼 ** · 賣方 75982588</p>
-                    </div>
-
-                    <!-- 財政部規格解碼演算法說明面板 (佔 7 欄) -->
-                    <div class="lg:col-span-7 bg-white p-5 rounded-2xl shadow-xl border border-slate-200 flex flex-col justify-between">
-                        <div>
-                            <h4 class="text-sm font-bold text-slate-800 flex items-center gap-1.5 mb-2">
-                                <i class="fa-solid fa-code text-emerald-600"></i> 財政部電子發票 QR Code 解碼規格書對照
-                            </h4>
-                            <p class="text-xs text-slate-500 leading-relaxed mb-4">
-                                本專案核心演算法依據<strong>「政府電子發票二維條碼規格」</strong>，在偵測到左、右發票條碼時，將會按位元、位移切割字串：
-                            </p>
-
-                            <!-- 即時解碼結果面板 -->
-                            <div id="decodePanel" class="space-y-2 text-xs">
-                                <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
-                                    <div class="font-bold text-emerald-700 mb-1">左側 QR (77碼核心)</div>
-                                    <p id="decodeLeftRaw" class="font-mono text-[10px] text-slate-500 break-all">—</p>
-                                    <div id="decodeLeftFields" class="grid grid-cols-2 gap-1 mt-1 text-[10px] text-slate-600"></div>
-                                </div>
-                                <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
-                                    <div class="font-bold text-sky-700 mb-1">右側 QR (品項 ** 開頭)</div>
-                                    <p id="decodeRightRaw" class="font-mono text-[10px] text-slate-500 break-all">—</p>
-                                    <div id="decodeRightItems" class="mt-1 text-[10px] text-slate-600"></div>
-                                </div>
-                                <div class="bg-amber-50 p-2.5 rounded-lg border border-amber-200">
-                                    <div class="font-bold text-amber-800 mb-1">OCR 備援 / 證明聯文字</div>
-                                    <p id="decodeOcrText" class="text-[10px] text-slate-600 whitespace-pre-wrap max-h-24 overflow-y-auto">—</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 簡報時的 LLM 常識結合亮點 -->
-                        <div class="mt-4 bg-emerald-50 p-3 rounded-lg border border-emerald-100 text-xs text-emerald-800 leading-relaxed">
-                            <span class="font-bold flex items-center gap-1 mb-1">
-                                <i class="fa-solid fa-lightbulb"></i> 報告亮點：LLM 如何結合 QR 數據做活動判定？
-                            </span>
-                            左碼延伸段已含 <strong>培根雞蛋堡:1:45</strong>；右碼僅 <code>**</code>。賣方統編 <code>75982588</code> 經<a href="https://www.etax.nat.gov.tw/etwmain/etw113w1/ban/query" target="_blank" class="underline">稅籍查詢</a>對應「安心食品・和平建國門市」→ 連鎖速食店 → MOS BURGER。
-                        </div>
-                    </div>
-
-                </div>
-
+            </div>
             </section>
         </main>
 
-        <footer class="bg-slate-850 border-t border-slate-700 py-4 px-6 text-center text-xs text-slate-400">
-            雲端旅遊記帳LineBot 機器學習功能與二維條碼解碼演示系統 &copy; 2026. Made for Slide Presentation.
+        <!-- 發票掃描用隱藏元素（不在畫面顯示 QR 解碼面板） -->
+        <img id="invoicePreviewImg" src="" alt="" class="hidden" width="1" height="1">
+        <canvas id="invoiceScanCanvas" class="hidden"></canvas>
+        <div id="scanLine" class="hidden"></div>
+        <span id="qrScanBadge" class="hidden"></span>
+
+        <footer class="bg-slate-200 border-t border-slate-300 py-4 px-6 text-center text-xs text-slate-500">
+            雲端旅遊記帳 LineBot × Notion 演示系統 &copy; 2026
         </footer>
     </div>
 
@@ -419,7 +365,6 @@
             document.getElementById('userInput').addEventListener('keydown', e => {
                 if (e.key === 'Enter') sendUserText();
             });
-            initPreprocessUI();
         };
 
         function cleanQRString(s) {
@@ -1094,12 +1039,14 @@
         }
 
         function updateDecodePanel(result, ocrText) {
-            const badge = document.getElementById('qrScanBadge');
             const leftRaw = document.getElementById('decodeLeftRaw');
+            if (!leftRaw) return;
+            const badge = document.getElementById('qrScanBadge');
             const rightRaw = document.getElementById('decodeRightRaw');
             const leftFields = document.getElementById('decodeLeftFields');
             const rightItems = document.getElementById('decodeRightItems');
-            document.getElementById('decodeOcrText').textContent = ocrText || '—';
+            const ocrEl = document.getElementById('decodeOcrText');
+            if (ocrEl) ocrEl.textContent = ocrText || '—';
 
             if (result.qrLeft) {
                 leftRaw.textContent = result.qrLeft.slice(0, 120) + (result.qrLeft.length > 120 ? '…' : '');
