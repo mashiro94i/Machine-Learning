@@ -252,7 +252,7 @@
                         </div>
                         <div id="scanLine" class="hidden absolute left-4 right-4 h-1 bg-emerald-500 opacity-75 shadow-md scanner-line z-10"></div>
                         <div class="relative flex justify-center">
-                            <img id="invoicePreviewImg" src="mos_invoice_sample.png" alt="摩斯漢堡電子發票" class="max-h-[320px] rounded-lg border border-slate-200 shadow-sm object-contain">
+                            <img id="invoicePreviewImg" src="" alt="摩斯漢堡電子發票" class="max-h-[320px] rounded-lg border border-slate-200 shadow-sm object-contain">
                             <canvas id="invoiceScanCanvas" class="hidden"></canvas>
                         </div>
                         <p class="text-[9px] text-slate-400 mt-2 text-center">左碼含品項「培根雞蛋堡」· 右碼 ** · 賣方 75982588</p>
@@ -308,7 +308,11 @@
 
     <!-- 腳本邏輯：QR 解碼 + OCR + NLP + 分類 -->
     <script>
-        const SAMPLE_INVOICE_URL = 'mos_invoice_sample.png';
+        const SAMPLE_INVOICE_FILE = 'mos_invoice_sample.png';
+        function resolveAssetUrl(relativePath) {
+            return new URL(relativePath, document.baseURI || window.location.href).href;
+        }
+        const SAMPLE_INVOICE_URL = resolveAssetUrl(SAMPLE_INVOICE_FILE);
         const ETAX_BAN_QUERY_URL = 'https://www.etax.nat.gov.tw/etwmain/etw113w1/ban/query';
 
         // 您提供的真實 QR 字串（已去除 NUL）
@@ -379,8 +383,19 @@
 
         let notionData = [...originalNotionData];
 
+        function initInvoicePreviewImage() {
+            const img = document.getElementById('invoicePreviewImg');
+            if (!img) return;
+            img.src = SAMPLE_INVOICE_URL;
+            img.onerror = function() {
+                img.onerror = null;
+                img.alt = '發票示意圖（請上傳或確認 mos_invoice_sample.png 已部署）';
+            };
+        }
+
         window.onload = function() {
             if (typeof lucide !== 'undefined') lucide.createIcons();
+            initInvoicePreviewImage();
             updateNotionDOM();
             document.getElementById('userInput').addEventListener('keydown', e => {
                 if (e.key === 'Enter') sendUserText();
@@ -639,6 +654,8 @@
             };
         }
 
+        const PAYER_SELF_LABEL = '我';
+
         function formatPayerDisplay(payer, isDefault) {
             return isDefault ? `${payer} (預設)` : payer;
         }
@@ -685,8 +702,8 @@
                 color: entry.activity.color,
                 location: entry.location,
                 item: entry.item,
-                payer: payerDisplay,
-                payerColor: 'blue',
+                payer: entry.payer === PAYER_SELF_LABEL ? PAYER_SELF_LABEL : payerDisplay,
+                payerColor: entry.payer === PAYER_SELF_LABEL || entry.payer === DEFAULT_PAYER ? 'amber' : 'blue',
                 price: entry.amount
             });
             updateNotionDOM(true);
@@ -797,7 +814,7 @@
                 activityNote,
                 item: items || '—',
                 amount: parseInt(api.amount, 10) || 0,
-                payer: null,
+                payer: PAYER_SELF_LABEL,
                 meta: { source: 'carrier', matched, invNum: api.invNum, invDate: api.invDate, invoiceTime: api.invoiceTime }
             };
         }
@@ -1156,6 +1173,7 @@
                             活動推論（賣方地址 + 開立日期 ${api.invDate} + 時間 ${api.invoiceTime}）：${matchText}
                         </p>
                         ${draft.activityNote ? `<p class="text-[10px] text-amber-400">${draft.activityNote}</p>` : ''}
+                        <p class="text-[10px] text-slate-400">載具為本人帳號，付款人自動判別為 <b>${PAYER_SELF_LABEL}</b>（對應 ${DEFAULT_PAYER}）。</p>
                     </div>`);
 
                 beginLedgerWithPayerCheck(draft);
